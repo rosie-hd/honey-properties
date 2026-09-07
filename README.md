@@ -18,6 +18,16 @@ Open `index.html` in any browser — there is no build step and no server.
 - **Price per sq ft** for the subject property against a spread of comparable sales,
   filtered by size, distance and recency.
 
+## Many properties
+
+The page opens on a shelf of every property you have modelled, each card carrying its
+cash in, IRR, purchase price, all-in price per sq ft and a sparkline of the annual cash
+flows. Click one to open it, "All properties" to come back. Properties can be duplicated
+(handy for testing a variant of the same deal) and deleted. Each carries its own
+assumptions and its own comparable sales.
+
+A single deal saved by an earlier version is migrated onto the shelf on first load.
+
 ## Reading a listing
 
 Drop a **brochure or a printed listing PDF** on the panel at the top and it pulls out

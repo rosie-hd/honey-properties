@@ -246,6 +246,39 @@ details.imp summary:hover{color:var(--ink)}
 .foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
+/* ---------- the shelf of properties ---------- */
+body.on-projects .model-only{display:none !important}
+.proj-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:2px 0 18px}
+.proj-title{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0}
+.proj-sub{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px}
+.proj{
+  background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px;
+  cursor:pointer;display:flex;flex-direction:column;gap:11px;transition:border-color .12s,transform .12s;
+}
+.proj:hover,.proj:focus-visible{border-color:var(--honey);transform:translateY(-1px)}
+.proj:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
+.proj > header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.proj h3{font-size:14px;font-weight:600;margin:0;line-height:1.35;overflow-wrap:anywhere}
+.proj-actions{display:flex;gap:2px;flex:none;opacity:0;transition:opacity .12s}
+.proj:hover .proj-actions,.proj:focus-within .proj-actions{opacity:1}
+.proj-actions .icon{
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;
+  padding:3px 6px;border-radius:5px;
+}
+.proj-actions .icon:hover{background:var(--surface-2);color:var(--ink)}
+.proj-actions .icon.danger:hover{color:var(--crit)}
+.proj-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px}
+.proj-stats div{display:flex;flex-direction:column}
+.proj-stats span{font-size:10.5px;color:var(--muted)}
+.proj-stats b{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.015em}
+.spark{width:100%;height:28px;display:block}
+.proj > footer{font-size:11px;color:var(--muted);border-top:1px solid var(--grid);padding-top:9px}
+.proj-empty{
+  grid-column:1/-1;border:1.5px dashed var(--axis);border-radius:12px;padding:34px 20px;text-align:center;
+}
+.proj-empty p{color:var(--muted);font-size:13px;margin:0 0 12px}
+
 .loaded-bar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;
   background:color-mix(in srgb,var(--honey) 13%,var(--surface));
@@ -302,7 +335,8 @@ details.imp summary:hover{color:var(--ink)}
 
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
-  <div class="idblock">
+  <button class="btn" id="backBtn" hidden>&larr; All properties</button>
+  <div class="idblock model-only">
     <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
     <div class="linkrow">
       <input id="propLink" type="url" spellcheck="false" autocomplete="off"
@@ -313,15 +347,28 @@ details.imp summary:hover{color:var(--ink)}
     </div>
   </div>
   <div class="spacer"></div>
-  <div class="seg" id="ccySeg" role="group" aria-label="Currency">
+  <div class="seg model-only" id="ccySeg" role="group" aria-label="Currency">
     <button data-ccy="$" aria-pressed="true">$</button>
     <button data-ccy="£" aria-pressed="false">£</button>
     <button data-ccy="€" aria-pressed="false">€</button>
   </div>
   <button class="btn" id="themeBtn">Theme</button>
-  <button class="btn" id="copyBtn">Copy summary</button>
-  <button class="btn" id="resetBtn">Reset</button>
+  <button class="btn model-only" id="copyBtn">Copy summary</button>
+  <button class="btn model-only" id="resetBtn">Reset</button>
 </header>
+
+<div id="projectsView" hidden>
+  <div class="proj-head">
+    <div>
+      <h2 class="proj-title">Your properties</h2>
+      <p class="proj-sub" id="projCount"></p>
+    </div>
+    <button class="btn primary" id="newProjBtn">+ New property</button>
+  </div>
+  <div class="proj-grid" id="projGrid"></div>
+</div>
+
+<div id="modelView">
 
 <section class="ingest" id="ingest">
   <div class="ingest-head">
@@ -506,6 +553,8 @@ details.imp summary:hover{color:var(--ink)}
   </details>
 </div>
 
+</div><!-- /modelView -->
+
 <p class="foot">
   Honey Properties · everything is an assumption, nothing here is advice.<br>
   Drag any figure sideways, scroll on it, or type over it. All inputs and comps save automatically to this browser.
@@ -568,21 +617,174 @@ const SAMPLE_COMPS = [
   {a:"77 Draper Row",        s:19800, p:4210000,  d:"2025-06", m:2.8}
 ];
 
-const KEY = "honey-properties-v1";
+const KEY = "honey-properties-v1";        /* the original single-deal store */
+const STORE_KEY = "honey-properties-v2";  /* { projects:[…], activeId } */
+
+/* S and COMPS stay what they always were — the deal currently on screen. The
+   store holds every deal; opening one loads it into S, and save() writes it
+   back. Every existing save() call site keeps its old meaning. */
 let S = Object.assign({}, DEFAULTS);
 let COMPS = SAMPLE_COMPS.map(c => Object.assign({}, c));
+let STORE = {projects:[], activeId:null};
+
+function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, c =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]); }
+
+function blankProject(seed){
+  return {id:newId(), created:Date.now(), updated:Date.now(),
+          s:Object.assign({}, DEFAULTS, seed || {}),
+          comps:SAMPLE_COMPS.map(c => Object.assign({}, c))};
+}
+
+function loadStore(){
+  try{
+    const o = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    if(o && Array.isArray(o.projects) && o.projects.length) STORE = o;
+  }catch(e){}
+  if(!STORE.projects.length){
+    /* carry the single deal this browser already held into the new shelf,
+       so upgrading never costs anyone the numbers they had entered */
+    try{
+      const old = JSON.parse(localStorage.getItem(KEY) || "null");
+      if(old && old.s){
+        const p = blankProject(old.s);
+        if(Array.isArray(old.comps)) p.comps = old.comps;
+        STORE.projects.push(p);
+      }
+    }catch(e){}
+  }
+  if(!STORE.projects.length) STORE.projects.push(blankProject());
+  if(!STORE.projects.some(p => p.id === STORE.activeId)) STORE.activeId = STORE.projects[0].id;
+}
+function saveStore(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); }catch(e){}
+}
+function activeProject(){ return STORE.projects.find(p => p.id === STORE.activeId); }
 
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify({s:S, comps:COMPS})); }catch(e){}
+  const p = activeProject();
+  if(!p) return;
+  p.s = S; p.comps = COMPS; p.updated = Date.now();
+  saveStore();
 }
-function load(){
-  try{
-    const raw = localStorage.getItem(KEY);
-    if(!raw) return;
-    const o = JSON.parse(raw);
-    if(o && o.s) S = Object.assign({}, DEFAULTS, o.s);
-    if(o && Array.isArray(o.comps)) COMPS = o.comps;
-  }catch(e){}
+
+/* Run something against another deal's figures without disturbing the one on
+   screen — the shelf needs each card's headline numbers, and model() and the
+   money formatters all read the live S. */
+function withProject(p, fn){
+  const keepS = S, keepC = COMPS;
+  S = Object.assign({}, DEFAULTS, p.s);
+  COMPS = Array.isArray(p.comps) ? p.comps : [];
+  try{ return fn(); } finally{ S = keepS; COMPS = keepC; }
+}
+
+function paintProject(){
+  document.getElementById("propName").value = S.name || "";
+  linkInput.value = S.link || "";
+  syncLink();
+  applyModes();
+  buildAffixes();
+  render();
+}
+function openProject(id, pushHash){
+  const p = STORE.projects.find(x => x.id === id);
+  if(!p) return;
+  STORE.activeId = id;
+  S = Object.assign({}, DEFAULTS, p.s);
+  COMPS = Array.isArray(p.comps) ? p.comps : [];
+  saveStore();
+  paintProject();
+  showView("model");
+  if(pushHash !== false) location.hash = "#/p/" + id;
+}
+
+function showView(v){
+  document.getElementById("projectsView").hidden = v !== "projects";
+  document.getElementById("modelView").hidden    = v !== "model";
+  document.getElementById("backBtn").hidden      = v !== "model";
+  document.body.classList.toggle("on-projects", v === "projects");
+  if(v === "projects") renderProjects();
+}
+
+function ago(ts){
+  const d = (Date.now() - ts) / 1000;
+  if(d < 90) return "just now";
+  if(d < 3600) return Math.round(d/60) + " min ago";
+  if(d < 86400) return Math.round(d/3600) + "h ago";
+  if(d < 86400*7) return Math.round(d/86400) + "d ago";
+  return new Date(ts).toLocaleDateString(undefined,{day:"numeric",month:"short"});
+}
+
+function sparkline(vals){
+  const w = 200, h = 28, zero = h/2;
+  const hi = Math.max(...vals.map(v => Math.abs(v)), 1);
+  const bw = w / Math.max(1, vals.length);
+  const bars = vals.map((v,i) => {
+    const bh = Math.max(1, Math.abs(v)/hi * (zero - 1));
+    const y = v >= 0 ? zero - bh : zero;
+    return `<rect x="${(i*bw+1).toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(1,bw-2).toFixed(1)}"
+            height="${bh.toFixed(1)}" rx="1.5" fill="${v >= 0 ? "var(--s1)" : "var(--crit)"}"/>`;
+  }).join("");
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="0" x2="${w}" y1="${zero}" y2="${zero}" stroke="var(--grid)" stroke-width="1"/>${bars}</svg>`;
+}
+
+function renderProjects(){
+  const grid = document.getElementById("projGrid");
+  const items = STORE.projects.slice().sort((a,b) => b.updated - a.updated);
+  document.getElementById("projCount").textContent =
+    items.length === 1 ? "One property on the shelf" : `${items.length} properties on the shelf`;
+
+  grid.innerHTML = items.map(p => withProject(p, () => {
+    const m = model();
+    const irrTxt = m.irr === null ? "n/a" : pct(m.irr,1);
+    return `<article class="proj" data-id="${p.id}" tabindex="0" role="button"
+              aria-label="Open ${esc(S.name || "Untitled property")}">
+      <header>
+        <h3>${esc(S.name || "Untitled property")}</h3>
+        <div class="proj-actions">
+          <button class="icon" data-dup="${p.id}" title="Duplicate" aria-label="Duplicate">&#10697;</button>
+          <button class="icon danger" data-del="${p.id}" title="Delete" aria-label="Delete">&times;</button>
+        </div>
+      </header>
+      <div class="proj-stats">
+        <div><span>Cash in</span><b>${moneyC(m.equity)}</b></div>
+        <div><span>IRR</span><b class="${m.irr === null ? "" : m.irr >= 0 ? "pos" : "neg"}">${irrTxt}</b></div>
+        <div><span>Purchase</span><b>${moneyC(S.purchase)}</b></div>
+        <div><span>All-in</span><b>${money(m.totalCost/Math.max(1,S.sqft),0)}/sf</b></div>
+      </div>
+      ${sparkline(m.years.map(r => r.cf))}
+      <footer>${nf(S.sqft,0)} sq ft &middot; ${m.hold}-year hold &middot; edited ${ago(p.updated)}</footer>
+    </article>`;
+  })).join("");
+
+  grid.querySelectorAll(".proj").forEach(card => {
+    const open = e => { if(e.target.closest("[data-dup],[data-del]")) return; openProject(card.dataset.id); };
+    card.addEventListener("click", open);
+    card.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); open(e); } });
+  });
+  grid.querySelectorAll("[data-dup]").forEach(b => b.addEventListener("click", () => {
+    const src = STORE.projects.find(x => x.id === b.dataset.dup);
+    const copy = blankProject(src.s);
+    copy.s = Object.assign({}, src.s, {name: (src.s.name || "Untitled property") + " (copy)"});
+    copy.comps = (src.comps || []).map(c => Object.assign({}, c));
+    STORE.projects.push(copy); saveStore(); renderProjects();
+  }));
+  grid.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+    const victim = STORE.projects.find(x => x.id === b.dataset.del);
+    if(!confirm(`Delete "${victim.s.name || "Untitled property"}"? This cannot be undone.`)) return;
+    STORE.projects = STORE.projects.filter(x => x.id !== b.dataset.del);
+    if(!STORE.projects.length) STORE.projects.push(blankProject());
+    if(STORE.activeId === b.dataset.del) STORE.activeId = STORE.projects[0].id;
+    saveStore(); renderProjects();
+  }));
+}
+
+function route(){
+  const m = location.hash.match(/^#\/p\/(.+)$/);
+  if(m && STORE.projects.some(p => p.id === m[1])) openProject(m[1], false);
+  else showView("projects");
 }
 
 /* ==========================================================================
@@ -1764,25 +1966,25 @@ document.getElementById("listingText").addEventListener("paste", e => {
    rather than a list of figures to retype. What arrived that way is named on
    the page, because a number you did not type is one you should get to check.
    ========================================================================== */
-function applyQueryParams(){
+function parseQueryParams(){
   const q = new URLSearchParams(location.search);
-  const named = [];
+  const seed = {}, named = [];
 
-  if(q.has("name")){ S.name = q.get("name").slice(0,160); named.push("name"); }
-  if(q.has("link")){ S.link = q.get("link").slice(0,600); named.push("listing link"); }
+  if(q.has("name")){ seed.name = q.get("name").slice(0,160); named.push("name"); }
+  if(q.has("link")){ seed.link = q.get("link").slice(0,600); named.push("listing link"); }
   const ccy = q.get("ccy");
-  if(ccy && ["£","$","€"].includes(ccy)){ S.ccy = ccy; }
+  if(ccy && ["£","$","€"].includes(ccy)) seed.ccy = ccy;
 
   FIELDS.forEach(f => {
     if(!q.has(f.k)) return;
     const v = parseFloat(q.get(f.k).replace(/[^0-9.\-]/g,""));
     if(!isFinite(v)) return;
     const clamped = clamp(f, v);
-    S[f.k] = clamped;
+    seed[f.k] = clamped;
     named.push(f.l.toLowerCase() + (clamped !== v ? " (capped at this model's limit)" : ""));
   });
 
-  return named;
+  return {seed, named};
 }
 
 function showLoadedBanner(named){
@@ -1792,23 +1994,37 @@ function showLoadedBanner(named){
   bar.innerHTML = `<b>Loaded from the link:</b> <span></span>
     <button class="btn" id="dismissLoaded">Got it</button>`;
   bar.querySelector("span").textContent = named.join(" · ");
-  document.querySelector(".wrap").insertBefore(bar, document.getElementById("ingest"));
+  const mv = document.getElementById("modelView");
+  mv.insertBefore(bar, document.getElementById("ingest"));
   document.getElementById("dismissLoaded").addEventListener("click", () => bar.remove());
 }
 
 /* ---------- boot ---------- */
+document.getElementById("backBtn").addEventListener("click", () => { save(); location.hash = "#/"; });
+document.getElementById("newProjBtn").addEventListener("click", () => {
+  const p = blankProject();
+  STORE.projects.push(p); saveStore();
+  openProject(p.id);
+});
+addEventListener("hashchange", route);
+
 (function init(){
   try{ const t = localStorage.getItem(KEY+"-theme"); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
-  load();
-  const fromLink = applyQueryParams();   // a link beats whatever this browser had saved
+  loadStore();
   buildFields();
-  document.getElementById("propName").value = S.name;
-  linkInput.value = S.link || "";
-  syncLink();
-  applyModes();
-  buildAffixes();
-  render();
-  showLoadedBanner(fromLink);
+
+  const {seed, named} = parseQueryParams();
+  if(named.length){
+    /* a link carrying figures opens as its own property, and the query is then
+       dropped from the address so refreshing never piles up duplicates */
+    const p = blankProject(seed);
+    STORE.projects.push(p); STORE.activeId = p.id; saveStore();
+    history.replaceState(null, "", location.pathname + "#/p/" + p.id);
+    openProject(p.id, false);
+    showLoadedBanner(named);
+  } else {
+    route();
+  }
 })();
 </script>
 </body>
