@@ -246,6 +246,16 @@ details.imp summary:hover{color:var(--ink)}
 .foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
+.loaded-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;
+  background:color-mix(in srgb,var(--honey) 13%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--honey) 40%,transparent);
+  border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink-2);
+}
+.loaded-bar b{color:var(--ink);font-weight:600}
+.loaded-bar span{flex:1;min-width:140px}
+.loaded-bar .btn{padding:4px 10px}
+
 /* ---------- reading a listing ---------- */
 .ingest{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:18px}
 .ingest-head{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.1fr);gap:14px;align-items:stretch}
@@ -581,8 +591,8 @@ function load(){
 const C = () => S.ccy;
 const FIELDS = [
   // key, label, min, max, step, prefix, suffix, decimals, group
-  {k:"sqft",     l:"Net internal area",     min:1000,  max:200000, st:100,  suf:" sq ft", dec:0, g:"g-acq"},
-  {k:"purchase", l:"Purchase price",        min:500000,max:20000000,st:25000,pre:"ccy",   dec:0, g:"g-acq"},
+  {k:"sqft",     l:"Net internal area",     min:200,   max:200000, st:100,  suf:" sq ft", dec:0, g:"g-acq"},
+  {k:"purchase", l:"Purchase price",        min:100000,max:20000000,st:25000,pre:"ccy",   dec:0, g:"g-acq"},
   {k:"acqPct",   l:"Acquisition costs",     min:0,     max:15,     st:0.25, suf:"%",      dec:2, g:"g-acq"},
 
   {k:"fitOut",   l:"Fit-out budget",        min:0,     max:12000000,st:25000,pre:"ccy",   dec:0, g:"g-fit"},
@@ -1747,10 +1757,50 @@ document.getElementById("listingText").addEventListener("paste", e => {
   if(t) setTimeout(() => readPastedText(t, true), 0);
 });
 
+/* ==========================================================================
+   11. OPENING A DEAL FROM A LINK
+   ?name=…&link=…&ccy=£&purchase=895000&sqft=958 — any input on the page can be
+   set from the query string, so a property can be handed over as a single URL
+   rather than a list of figures to retype. What arrived that way is named on
+   the page, because a number you did not type is one you should get to check.
+   ========================================================================== */
+function applyQueryParams(){
+  const q = new URLSearchParams(location.search);
+  const named = [];
+
+  if(q.has("name")){ S.name = q.get("name").slice(0,160); named.push("name"); }
+  if(q.has("link")){ S.link = q.get("link").slice(0,600); named.push("listing link"); }
+  const ccy = q.get("ccy");
+  if(ccy && ["£","$","€"].includes(ccy)){ S.ccy = ccy; }
+
+  FIELDS.forEach(f => {
+    if(!q.has(f.k)) return;
+    const v = parseFloat(q.get(f.k).replace(/[^0-9.\-]/g,""));
+    if(!isFinite(v)) return;
+    const clamped = clamp(f, v);
+    S[f.k] = clamped;
+    named.push(f.l.toLowerCase() + (clamped !== v ? " (capped at this model's limit)" : ""));
+  });
+
+  return named;
+}
+
+function showLoadedBanner(named){
+  if(!named.length) return;
+  const bar = document.createElement("div");
+  bar.className = "loaded-bar";
+  bar.innerHTML = `<b>Loaded from the link:</b> <span></span>
+    <button class="btn" id="dismissLoaded">Got it</button>`;
+  bar.querySelector("span").textContent = named.join(" · ");
+  document.querySelector(".wrap").insertBefore(bar, document.getElementById("ingest"));
+  document.getElementById("dismissLoaded").addEventListener("click", () => bar.remove());
+}
+
 /* ---------- boot ---------- */
 (function init(){
   try{ const t = localStorage.getItem(KEY+"-theme"); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
   load();
+  const fromLink = applyQueryParams();   // a link beats whatever this browser had saved
   buildFields();
   document.getElementById("propName").value = S.name;
   linkInput.value = S.link || "";
@@ -1758,6 +1808,7 @@ document.getElementById("listingText").addEventListener("paste", e => {
   applyModes();
   buildAffixes();
   render();
+  showLoadedBanner(fromLink);
 })();
 </script>
 </body>

@@ -33,6 +33,17 @@ GIA total, because the model underwrites net internal area. Figures on a "per an
 "pcm", "per sq ft", "service charge" or "stamp duty" line are never mistaken for the
 asking price.
 
+## Opening a deal from a link
+
+Any input can be set from the query string, so a property can be handed over as a
+single URL instead of a list of figures to retype:
+
+    ?name=1+Osberton+Road&link=https://…&ccy=%C2%A3&purchase=895000&sqft=958
+
+Values that arrive this way are listed in a banner on the page — a number you did not
+type is one you should get to check — and anything outside a field's range is capped,
+and says so.
+
 ## Using it
 
 Each deal carries a **listing link** at the top, kept alongside the assumptions so the
