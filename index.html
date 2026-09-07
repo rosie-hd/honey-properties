@@ -1,0 +1,1345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Honey Properties</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=DM+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  /* honey paper: neutrals carry a warm amber bias, data stays cool */
+  --plane:#faf7f0; --surface:#fffdf8; --surface-2:#f3efe4; --surface-3:#ebe5d6;
+  --ink:#17140d; --ink-2:#57513f; --muted:#8d856f;
+  --grid:#e6e0d0; --axis:#cbc3ae; --hair:rgba(23,20,13,0.11);
+  --s1:#2a78d6; --s2:#eb6834;
+  --good:#0ca30c; --warn:#c8922a; --crit:#d03b3b;
+  --good-text:#006300;
+  --accent:#2a78d6;
+  --honey:#c8922a;
+  --shadow:0 1px 2px rgba(23,20,13,.05), 0 6px 22px rgba(23,20,13,.06);
+  --display:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"DM Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --plane:#12100c; --surface:#1c1913; --surface-2:#26221a; --surface-3:#332e23;
+    --ink:#fdfbf5; --ink-2:#c5bda8; --muted:#8d856f;
+    --grid:#2e2a20; --axis:#3d382c; --hair:rgba(253,251,245,0.11);
+    --s1:#3987e5; --s2:#d95926;
+    --good:#0ca30c; --warn:#e0a83a; --crit:#d03b3b;
+    --good-text:#0ca30c;
+    --accent:#3987e5;
+    --honey:#e0a83a;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 22px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --plane:#12100c; --surface:#1c1913; --surface-2:#26221a; --surface-3:#332e23;
+  --ink:#fdfbf5; --ink-2:#c5bda8; --muted:#8d856f;
+  --grid:#2e2a20; --axis:#3d382c; --hair:rgba(253,251,245,0.11);
+  --s1:#3987e5; --s2:#d95926;
+  --good:#0ca30c; --warn:#e0a83a; --crit:#d03b3b;
+  --good-text:#0ca30c;
+  --accent:#3987e5;
+  --honey:#e0a83a;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 22px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--plane); color:var(--ink);
+  font:14px/1.5 var(--body);
+  -webkit-font-smoothing:antialiased;
+}
+.chart{font-family:var(--mono)}
+.wrap{max-width:1360px;margin:0 auto;padding:20px 20px 80px}
+
+/* ---------- header ---------- */
+header.top{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:4px 0 18px;
+}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand h1{font-family:var(--display);font-size:17px;font-weight:700;margin:0;letter-spacing:-.012em}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--honey);display:inline-block;align-self:center;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--honey) 22%,transparent)}
+.brand small{color:var(--muted);font-size:12px}
+header.top .spacer{flex:1}
+#propName{
+  background:transparent;border:none;border-bottom:1px solid var(--hair);
+  color:var(--ink);font:inherit;font-weight:600;font-size:15px;padding:4px 2px;min-width:220px;
+}
+#propName:focus{outline:none;border-bottom-color:var(--honey)}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
+.btn{
+  background:var(--surface);color:var(--ink-2);border:1px solid var(--hair);
+  border-radius:7px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer;
+}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--surface);border-color:transparent}
+.btn.primary:hover{filter:brightness(1.07)}
+.seg{display:inline-flex;border:1px solid var(--hair);border-radius:7px;overflow:hidden;background:var(--surface)}
+.seg button{background:transparent;border:none;color:var(--muted);font:inherit;font-size:12.5px;padding:6px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:322px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:1040px){.grid{grid-template-columns:1fr}}
+
+.card{
+  background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:16px;
+}
+.card + .card{margin-top:14px}
+.card.summary{box-shadow:var(--shadow)}
+.rail{background:var(--surface);border:1px solid var(--hair);border-radius:12px;overflow:hidden}
+.blk{padding:16px}
+.blk + .blk{border-top:1px solid var(--hair)}
+.card h2, .blk h2{
+  font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 12px;
+}
+.card h2 .rt, .blk h2 .rt{float:right;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted)}
+.sub{color:var(--ink-2);font-size:12.5px;margin:-6px 0 14px}
+
+/* ---------- scrub fields ---------- */
+.field{margin-bottom:13px}
+.field:last-child{margin-bottom:2px}
+.field-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+.field-head label{font-size:12.5px;color:var(--ink-2);cursor:ew-resize}
+.field-head .hint{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.field-input{
+  display:flex;align-items:center;gap:1px;background:var(--surface-2);
+  border:1px solid transparent;border-radius:7px;padding:0 9px;height:32px;
+}
+.field-input:focus-within{border-color:var(--honey);background:var(--surface)}
+.field-input .aff{color:var(--muted);font-size:13px;user-select:none}
+.field-input input.num{
+  flex:1;min-width:0;background:transparent;border:none;color:var(--ink);
+  font-family:var(--mono);font-size:13.5px;font-weight:500;
+  padding:0 2px;cursor:ew-resize;text-align:left;
+}
+.field-input input.num:focus{outline:none;cursor:text}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;
+  margin:3px 0 0;cursor:pointer;display:block;
+}
+input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:var(--grid)}
+input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:var(--grid)}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--honey);
+  margin-top:-5px;border:2px solid var(--surface);
+}
+input[type=range]::-moz-range-thumb{
+  width:13px;height:13px;border-radius:50%;background:var(--honey);border:2px solid var(--surface)
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 13px}
+.toggle-row span{font-size:12.5px;color:var(--ink-2)}
+
+/* ---------- hero + tiles ---------- */
+.hero{
+  display:flex;gap:26px;align-items:flex-end;flex-wrap:wrap;
+  padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--hair);
+}
+.hero .lab{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.hero .val{font-family:var(--display);font-size:48px;line-height:1.05;font-weight:600;letter-spacing:-.03em}
+.hero .note{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+.hero .side{display:flex;gap:26px;flex-wrap:wrap}
+.hero .side .lab{margin-bottom:1px}
+.hero .side .v2{font-family:var(--display);font-size:22px;font-weight:600;letter-spacing:-.02em}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:10px;overflow:hidden}
+.tile{background:var(--surface);padding:11px 13px}
+.tile .lab{font-size:11px;color:var(--muted);margin-bottom:3px}
+.tile .v{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.02em}
+.tile .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+.pos{color:var(--good-text)} .neg{color:var(--crit)}
+
+/* ---------- table ---------- */
+.tbl-wrap{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+th{font-family:var(--body)}
+th,td{padding:7px 9px;text-align:right;white-space:nowrap}
+th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--axis)}
+th:first-child,td:first-child{text-align:left}
+tbody tr:not(:last-child) td{border-bottom:1px solid var(--grid)}
+tbody tr:hover td{background:var(--surface-2)}
+tr.exit td{font-weight:640;border-top:1px solid var(--axis)}
+tr.exit td:first-child{color:var(--s2)}
+td .bar{display:inline-block;height:3px;border-radius:2px;background:var(--s1);vertical-align:middle;margin-left:6px}
+
+/* ---------- charts ---------- */
+.chart{width:100%;display:block;overflow:visible}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:2px 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.tip{
+  position:fixed;pointer-events:none;z-index:60;background:var(--surface);color:var(--ink);
+  border:1px solid var(--hair);border-radius:8px;padding:8px 10px;font-size:12px;
+  box-shadow:var(--shadow);opacity:0;transition:opacity .08s;max-width:250px;
+  font-variant-numeric:tabular-nums;
+}
+.tip b{display:block;font-size:12.5px;margin-bottom:3px;font-weight:640}
+.tip div{color:var(--ink-2)}
+.tip em{font-style:normal;color:var(--ink);font-weight:600}
+
+/* ---------- comps ---------- */
+.banner{
+  display:flex;gap:9px;align-items:flex-start;background:var(--surface-2);
+  border:1px solid var(--hair);border-left:3px solid var(--honey);
+  border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px;
+}
+.banner b{color:var(--ink);font-weight:600}
+.banner > b:first-child{color:var(--honey);font-size:15px;line-height:1.2}
+.filters{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.filters .field{width:158px;margin-bottom:0}
+.comps-tbl input{
+  background:transparent;border:1px solid transparent;border-radius:5px;color:var(--ink);
+  font-family:var(--mono);font-size:12.5px;padding:3px 5px;width:100%;text-align:right;
+}
+.comps-tbl input.txt{text-align:left;font-family:var(--body)}
+.comps-tbl input:hover{border-color:var(--hair)}
+.comps-tbl input:focus{outline:none;border-color:var(--honey);background:var(--surface)}
+.comps-tbl td{padding:2px 6px}
+.comps-tbl tr.out{opacity:.38}
+.comps-tbl .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;border-radius:5px}
+.comps-tbl .del:hover{color:var(--crit);background:var(--surface-2)}
+.pill{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:20px;background:var(--surface-2);color:var(--muted);border:1px solid var(--hair)}
+.pill.in{color:var(--good-text);border-color:color-mix(in srgb,var(--good) 35%,transparent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:10px;overflow:hidden;margin-bottom:18px}
+.stats div{background:var(--surface);padding:9px 11px}
+.stats .l{font-size:10.5px;color:var(--muted)}
+.stats .v{font-family:var(--display);font-size:16px;font-weight:600;margin-top:2px}
+textarea.paste{
+  width:100%;min-height:88px;background:var(--surface-2);border:1px solid var(--hair);border-radius:8px;
+  color:var(--ink);font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;padding:9px;resize:vertical;
+}
+details.imp{margin-top:14px}
+details.imp summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);padding:4px 0}
+details.imp summary:hover{color:var(--ink)}
+.foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
+.dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
+  <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
+  <div class="spacer"></div>
+  <div class="seg" id="ccySeg" role="group" aria-label="Currency">
+    <button data-ccy="$" aria-pressed="true">$</button>
+    <button data-ccy="£" aria-pressed="false">£</button>
+    <button data-ccy="€" aria-pressed="false">€</button>
+  </div>
+  <button class="btn" id="themeBtn">Theme</button>
+  <button class="btn" id="copyBtn">Copy summary</button>
+  <button class="btn" id="resetBtn">Reset</button>
+</header>
+
+<div class="grid">
+
+  <!-- ============ INPUTS ============ -->
+  <div>
+    <div class="rail">
+      <section class="blk">
+        <h2>Acquisition</h2>
+        <div id="g-acq"></div>
+      </section>
+
+      <section class="blk">
+        <h2>Fit-out</h2>
+        <div id="g-fit"></div>
+      </section>
+
+      <section class="blk">
+        <h2>Debt</h2>
+        <div id="g-debt"></div>
+        <div class="toggle-row">
+          <span>Interest only</span>
+          <div class="seg" id="ioSeg" role="group" aria-label="Amortisation">
+            <button data-io="1" aria-pressed="true">Yes</button>
+            <button data-io="0" aria-pressed="false">Amortise</button>
+          </div>
+        </div>
+        <div id="g-debt2"></div>
+        <div class="toggle-row">
+          <span>Fund build interest with cash</span>
+          <div class="seg" id="capSeg" role="group" aria-label="Construction interest">
+            <button data-cap="1" aria-pressed="true">Cash</button>
+            <button data-cap="0" aria-pressed="false">Ignore</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="blk">
+        <h2>Income &amp; operations</h2>
+        <div class="toggle-row">
+          <span>Revenue basis</span>
+          <div class="seg" id="revSeg" role="group" aria-label="Revenue basis">
+            <button data-rev="psf" aria-pressed="true">Per sq ft</button>
+            <button data-rev="total" aria-pressed="false">Total</button>
+          </div>
+        </div>
+        <div id="g-inc"></div>
+        <div class="toggle-row">
+          <span>Operating costs</span>
+          <div class="seg" id="opexSeg" role="group" aria-label="Opex basis">
+            <button data-opex="pct" aria-pressed="true">% of revenue</button>
+            <button data-opex="psf" aria-pressed="false">Per sq ft</button>
+          </div>
+        </div>
+        <div id="g-opex"></div>
+      </section>
+
+      <section class="blk">
+        <h2>Hold &amp; exit</h2>
+        <div id="g-exit"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ OUTPUTS ============ -->
+  <div>
+    <div class="card summary">
+      <div class="hero">
+        <div>
+          <div class="lab">Total cash you put in</div>
+          <div class="val" id="heroEquity">—</div>
+          <div class="note" id="heroNote">—</div>
+        </div>
+        <div class="side">
+          <div><div class="lab">IRR (levered)</div><div class="v2" id="kIrr">—</div></div>
+          <div><div class="lab">Equity multiple</div><div class="v2" id="kMult">—</div></div>
+          <div><div class="lab">Avg cash-on-cash</div><div class="v2" id="kCoc">—</div></div>
+        </div>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="lab">Total project cost</div><div class="v" id="kCost">—</div><div class="d" id="kCostPsf">—</div></div>
+        <div class="tile"><div class="lab">Total debt</div><div class="v" id="kDebt">—</div><div class="d" id="kLtc">—</div></div>
+        <div class="tile"><div class="lab">Stabilised NOI</div><div class="v" id="kNoi">—</div><div class="d" id="kNoiPsf">—</div></div>
+        <div class="tile"><div class="lab">Yield on cost</div><div class="v" id="kYoc">—</div><div class="d" id="kSpread">—</div></div>
+        <div class="tile"><div class="lab">Exit value</div><div class="v" id="kExit">—</div><div class="d" id="kExitPsf">—</div></div>
+        <div class="tile"><div class="lab">DSCR year 1 / stab.</div><div class="v" id="kDscr">—</div><div class="d" id="kBreak">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Operating cash flow after debt<span class="rt" id="chartSub"></span></h2>
+      <p class="sub">Rent and trading income less operating costs and debt service — the cash that lands in your
+      pocket each year you hold it. Cash-on-cash is that figure over your equity. The sale is shown separately below.</p>
+      <svg id="cfChart" class="chart" role="img" aria-label="Operating cash flow after debt for each year of the hold"></svg>
+    </div>
+
+    <div class="card">
+      <h2>Cumulative cash back, including the sale</h2>
+      <div class="legend">
+        <span><i style="background:var(--s1)"></i>Cash returned from operations</span>
+        <span><i style="background:var(--s2)"></i>Net sale proceeds at exit</span>
+        <span><i style="background:var(--axis)"></i>Equity you put in</span>
+      </div>
+      <svg id="cumChart" class="chart" role="img" aria-label="Cumulative cash returned against equity invested"></svg>
+    </div>
+
+    <div class="card">
+      <h2>Year by year</h2>
+      <div class="tbl-wrap">
+        <table id="cfTable">
+          <thead><tr>
+            <th>Year</th><th>Revenue</th><th>NOI</th><th>Debt service</th>
+            <th>Cash flow</th><th>Cash-on-cash</th><th>Cumulative cash</th><th>Cum. % of equity</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMPS ============ -->
+<div class="card" style="margin-top:18px">
+  <h2>Price per sq ft — subject vs comparable sales</h2>
+  <div class="banner">
+    <b>!</b>
+    <div>This dashboard has <b>no live market data feed</b> — the rows below are placeholder examples.
+    Paste or type your own comparable sales (from CoStar, Rightmove, PropertyShark, Land Registry, your broker's
+    export, whatever you use) and the filters and spread update instantly. Your data is saved in this browser only.</div>
+  </div>
+
+  <div class="filters" id="g-comp"></div>
+
+  <div class="stats" id="compStats"></div>
+
+  <svg id="compChart" class="chart" role="img" aria-label="Distribution of comparable price per square foot"></svg>
+
+  <div class="tbl-wrap" style="margin-top:14px">
+    <table class="comps-tbl" id="compTable">
+      <thead><tr>
+        <th style="width:26%">Address / property</th><th>Sq ft</th><th>Sale price</th>
+        <th>Date</th><th>Miles</th><th>£/sf</th><th>Match</th><th></th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="btn" id="addComp">+ Add comp</button>
+    <button class="btn" id="clearComps">Clear all</button>
+    <button class="btn" id="sampleComps">Load sample set</button>
+  </div>
+
+  <details class="imp">
+    <summary>Paste comps from a spreadsheet (CSV or tab-separated)</summary>
+    <p class="sub" style="margin:8px 0">One row per sale. Columns: <b>address, sq ft, price, date (YYYY-MM or YYYY-MM-DD), distance in miles</b>. A header row is fine.</p>
+    <textarea class="paste" id="pasteBox" spellcheck="false" placeholder="12 Wharf Road, 24500, 6250000, 2024-06, 0.8&#10;8 Bellow Street, 31000, 7900000, 2023-11, 1.4"></textarea>
+    <div style="margin-top:8px;display:flex;gap:8px">
+      <button class="btn primary" id="importBtn">Import rows</button>
+      <button class="btn" id="appendBtn">Append to existing</button>
+      <span id="importMsg" style="align-self:center;font-size:12px;color:var(--muted)"></span>
+    </div>
+  </details>
+</div>
+
+<p class="foot">
+  Honey Properties · everything is an assumption, nothing here is advice.<br>
+  Drag any figure sideways, scroll on it, or type over it. All inputs and comps save automatically to this browser.
+</p>
+</div>
+
+<div class="tip" id="tip" role="status"></div>
+
+<script>
+"use strict";
+
+/* ==========================================================================
+   1. STATE
+   ========================================================================== */
+const DEFAULTS = {
+  name:"Untitled property", ccy:"$",
+  sqft:      28000,
+  purchase:  5000000,
+  acqPct:    5,
+  fitOut:    3000000,
+  contPct:   10,
+  buildMon:  12,
+  ltvProp:   65,
+  ltcFit:    65,
+  rateProp:  5,
+  rateFit:   8,
+  amortYrs:  25,
+  io:        1,
+  capInt:    1,
+  revMode:  "psf",
+  rentPsf:   36,
+  revTotal:  1008000,
+  revGrowth: 3,
+  vacancy:   5,
+  leaseUp:   9,
+  opexMode: "pct",
+  opexPct:   32,
+  opexPsf:   19,
+  hold:      7,
+  exitCap:   6.25,
+  saleCost:  2,
+  // comps filters
+  cSqftTol:  25,
+  cDist:     2,
+  cYears:    3
+};
+
+const SAMPLE_COMPS = [
+  {a:"12 Wharf Road",        s:24500, p:6250000,  d:"2024-06", m:0.8},
+  {a:"8 Bellow Street",      s:31000, p:7900000,  d:"2023-11", m:1.4},
+  {a:"Grainger House",       s:27200, p:6100000,  d:"2024-02", m:0.5},
+  {a:"44 Sable Lane",        s:29800, p:8050000,  d:"2025-01", m:1.9},
+  {a:"The Old Bindery",      s:22400, p:4980000,  d:"2023-04", m:1.1},
+  {a:"5 Cordwainer Yard",    s:33500, p:9100000,  d:"2024-09", m:2.4},
+  {a:"Marlow Works",         s:26100, p:5450000,  d:"2022-08", m:0.9},
+  {a:"19 Pellet Street",     s:30400, p:8600000,  d:"2025-04", m:1.6},
+  {a:"Ashcroft Building",    s:41000, p:11800000, d:"2024-03", m:1.2},
+  {a:"2 Hollan Mews",        s:25600, p:6720000,  d:"2024-11", m:0.3},
+  {a:"Fenner Court",         s:28900, p:7150000,  d:"2023-07", m:1.7},
+  {a:"77 Draper Row",        s:19800, p:4210000,  d:"2025-06", m:2.8}
+];
+
+const KEY = "honey-properties-v1";
+let S = Object.assign({}, DEFAULTS);
+let COMPS = SAMPLE_COMPS.map(c => Object.assign({}, c));
+
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify({s:S, comps:COMPS})); }catch(e){}
+}
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return;
+    const o = JSON.parse(raw);
+    if(o && o.s) S = Object.assign({}, DEFAULTS, o.s);
+    if(o && Array.isArray(o.comps)) COMPS = o.comps;
+  }catch(e){}
+}
+
+/* ==========================================================================
+   2. FIELD DEFINITIONS
+   ========================================================================== */
+const C = () => S.ccy;
+const FIELDS = [
+  // key, label, min, max, step, prefix, suffix, decimals, group
+  {k:"sqft",     l:"Net internal area",     min:1000,  max:200000, st:100,  suf:" sq ft", dec:0, g:"g-acq"},
+  {k:"purchase", l:"Purchase price",        min:500000,max:20000000,st:25000,pre:"ccy",   dec:0, g:"g-acq"},
+  {k:"acqPct",   l:"Acquisition costs",     min:0,     max:15,     st:0.25, suf:"%",      dec:2, g:"g-acq"},
+
+  {k:"fitOut",   l:"Fit-out budget",        min:0,     max:12000000,st:25000,pre:"ccy",   dec:0, g:"g-fit"},
+  {k:"contPct",  l:"Contingency",           min:0,     max:30,     st:0.5,  suf:"%",      dec:1, g:"g-fit"},
+  {k:"buildMon", l:"Build period",          min:0,     max:48,     st:1,    suf:" months",dec:0, g:"g-fit"},
+
+  {k:"ltvProp",  l:"Leverage on property",  min:0,     max:95,     st:0.5,  suf:"%",      dec:1, g:"g-debt"},
+  {k:"rateProp", l:"Property debt rate",    min:0,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
+  {k:"ltcFit",   l:"Leverage on fit-out",   min:0,     max:95,     st:0.5,  suf:"%",      dec:1, g:"g-debt"},
+  {k:"rateFit",  l:"Fit-out debt rate",     min:0,     max:20,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
+  {k:"amortYrs", l:"Amortisation period",   min:5,     max:40,     st:1,    suf:" years", dec:0, g:"g-debt2"},
+
+  {k:"rentPsf",  l:"Stabilised revenue",    min:0,     max:400,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-inc"},
+  {k:"revTotal", l:"Stabilised revenue",    min:0,     max:20000000,st:10000,pre:"ccy",  dec:0, g:"g-inc"},
+  {k:"revGrowth",l:"Revenue growth p.a.",   min:-5,    max:12,     st:0.25, suf:"%",      dec:2, g:"g-inc"},
+  {k:"vacancy",  l:"Vacancy / credit loss", min:0,     max:40,     st:0.5,  suf:"%",      dec:1, g:"g-inc"},
+  {k:"leaseUp",  l:"Lease-up to stabilised",min:0,     max:48,     st:1,    suf:" months",dec:0, g:"g-inc"},
+
+  {k:"opexPct",  l:"Operating costs",       min:0,     max:80,     st:0.5,  suf:"% of revenue", dec:1, g:"g-opex"},
+  {k:"opexPsf",  l:"Operating costs",       min:0,     max:120,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-opex"},
+
+  {k:"hold",     l:"Hold period",           min:1,     max:25,     st:1,    suf:" years", dec:0, g:"g-exit"},
+  {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit"},
+  {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit"},
+
+  {k:"cSqftTol", l:"Size tolerance",        min:5,     max:100,    st:5,    pre:"±", suf:"%", dec:0, g:"g-comp"},
+  {k:"cDist",    l:"Max distance",          min:0.25,  max:10,     st:0.25, suf:" miles", dec:2, g:"g-comp"},
+  {k:"cYears",   l:"Sold within last",      min:1,     max:10,     st:1,    suf:" years", dec:0, g:"g-comp"}
+];
+const F = {}; FIELDS.forEach(f => F[f.k] = f);
+
+/* ==========================================================================
+   3. FORMATTING
+   ========================================================================== */
+const nf = (v,d=0) => (isFinite(v)?v:0).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+function money(v,d=0){ const s = v<0 ? "-" : ""; return s + C() + nf(Math.abs(v),d); }
+function moneyC(v){ // compact
+  const n = Math.abs(v), s = v<0?"-":"";
+  if(n>=1e9) return s+C()+ (n/1e9).toFixed(2).replace(/\.00$/,"")+"bn";
+  if(n>=1e6) return s+C()+ (n/1e6).toFixed(2).replace(/\.?0+$/,"")+"m";
+  if(n>=1e3) return s+C()+ Math.round(n/1e3)+"k";
+  return s+C()+Math.round(n);
+}
+const pct = (v,d=1) => (isFinite(v)? (v*100).toFixed(d) : "—") + "%";
+
+/* ==========================================================================
+   4. THE MODEL
+   ========================================================================== */
+function rampFactor(year, leaseUpMonths){
+  if(leaseUpMonths <= 0) return 1;
+  const L = leaseUpMonths, a = (year-1)*12, b = year*12;
+  const Fint = m => m <= L ? (m*m)/(2*L) : (L/2) + (m - L);
+  return (Fint(b) - Fint(a)) / 12;
+}
+function pmt(principal, rate, years){
+  if(principal <= 0) return 0;
+  if(rate <= 0) return principal / years;
+  return principal * rate / (1 - Math.pow(1+rate, -years));
+}
+function irr(cfs){
+  const npv = r => cfs.reduce((s,c,i) => s + c/Math.pow(1+r, i), 0);
+  let lo = -0.9999, hi = 10;
+  if(npv(lo) * npv(hi) > 0) return null;
+  for(let i=0;i<300;i++){
+    const mid = (lo+hi)/2;
+    if(npv(lo)*npv(mid) <= 0) hi = mid; else lo = mid;
+  }
+  return (lo+hi)/2;
+}
+
+function model(){
+  const sqft = Math.max(1, S.sqft);
+  const acqCosts = S.purchase * S.acqPct/100;
+  const fitTotal = S.fitOut * (1 + S.contPct/100);
+  const debtProp = S.purchase * S.ltvProp/100;
+  const debtFit  = fitTotal   * S.ltcFit/100;
+
+  // interest accruing during the build, before income starts
+  const buildYrs = S.buildMon/12;
+  const cpIntProp = debtProp * (S.rateProp/100) * buildYrs;
+  const cpIntFit  = debtFit * 0.5 * (S.rateFit/100) * buildYrs;  // avg 50% drawn
+  const cpInt = S.capInt ? (cpIntProp + cpIntFit) : 0;
+
+  const totalDebt = debtProp + debtFit;
+  const totalCost = S.purchase + acqCosts + fitTotal + cpInt;
+  const equity    = totalCost - totalDebt;
+
+  const baseRev = S.revMode === "psf" ? S.rentPsf * sqft : S.revTotal;
+  const g  = S.revGrowth/100;
+  const rp = S.rateProp/100, rf = S.rateFit/100;
+  const hold = Math.max(1, Math.round(S.hold));
+
+  const pmtProp = S.io ? 0 : pmt(debtProp, rp, S.amortYrs);
+  const pmtFit  = S.io ? 0 : pmt(debtFit,  rf, S.amortYrs);
+
+  let balProp = debtProp, balFit = debtFit;
+  const years = [];
+  let cum = 0;
+
+  for(let y=1; y<=hold+1; y++){
+    const gross = baseRev * Math.pow(1+g, y-1);
+    const ramp  = rampFactor(y, S.leaseUp);
+    const eff   = gross * ramp * (1 - S.vacancy/100);
+    const opex  = S.opexMode === "pct"
+                ? eff * S.opexPct/100
+                : S.opexPsf * sqft * Math.pow(1+g, y-1);
+    const noi   = eff - opex;
+
+    const iProp = balProp * rp, iFit = balFit * rf;
+    let dsProp = S.io ? iProp : Math.min(pmtProp, balProp + iProp);
+    let dsFit  = S.io ? iFit  : Math.min(pmtFit,  balFit  + iFit);
+    const ds = dsProp + dsFit;
+    const cf = noi - ds;
+
+    if(!S.io){
+      balProp = Math.max(0, balProp + iProp - dsProp);
+      balFit  = Math.max(0, balFit  + iFit  - dsFit);
+    }
+
+    if(y <= hold){
+      cum += cf;
+      years.push({y, gross, ramp, eff, opex, noi, ds, cf, cum,
+                  coc: equity>0 ? cf/equity : 0,
+                  cumPct: equity>0 ? cum/equity : 0,
+                  dscr: ds>0 ? noi/ds : Infinity,
+                  balance: balProp + balFit});   // closing balance
+    } else {
+      years.forwardNOI = noi;   // NOI in the year after sale — drives exit value
+    }
+  }
+
+  const forwardNOI = years.forwardNOI;
+  const endBalance = years[years.length-1].balance;
+  const exitValue  = S.exitCap > 0 ? forwardNOI / (S.exitCap/100) : 0;
+  const netProceeds = exitValue * (1 - S.saleCost/100) - endBalance;
+
+  const cfs = [-equity].concat(years.map((r,i) => r.cf + (i === years.length-1 ? netProceeds : 0)));
+  const rate = irr(cfs);
+  const totalOut = years.reduce((s,r) => s+r.cf, 0) + netProceeds;
+  const mult = equity > 0 ? totalOut/equity : 0;
+  const avgCoc = years.reduce((s,r) => s+r.coc, 0)/years.length;
+
+  // stabilised year 1 (no lease-up, no growth) for yield on cost
+  const stabEff  = baseRev * (1 - S.vacancy/100);
+  const stabOpex = S.opexMode === "pct" ? stabEff*S.opexPct/100 : S.opexPsf*sqft;
+  const stabNOI  = stabEff - stabOpex;
+  const stabDS   = S.io ? (debtProp*rp + debtFit*rf) : (pmtProp + pmtFit);
+  const blended  = totalDebt > 0 ? (debtProp*rp + debtFit*rf)/totalDebt : 0;
+
+  return {sqft, acqCosts, fitTotal, debtProp, debtFit, totalDebt, cpInt, totalCost, equity,
+          years, forwardNOI, exitValue, netProceeds, endBalance, irr:rate, mult, avgCoc,
+          stabNOI, stabDS, blended, hold, totalOut, baseRev};
+}
+
+/* ==========================================================================
+   5. SCRUBBABLE FIELDS
+   ========================================================================== */
+function fieldHTML(f){
+  const pre = f.pre === "ccy" ? C() : (f.pre || "");
+  return `<div class="field" data-k="${f.k}">
+    <div class="field-head"><label for="in-${f.k}">${f.l}</label><span class="hint" id="hint-${f.k}"></span></div>
+    <div class="field-input">
+      ${pre ? `<span class="aff pre">${pre}</span>` : ""}
+      <input class="num" id="in-${f.k}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
+             role="spinbutton" aria-valuemin="${f.min}" aria-valuemax="${f.max}">
+      ${f.suf ? `<span class="aff">${f.suf}</span>` : ""}
+    </div>
+    <input type="range" class="rng" min="${f.min}" max="${f.max}" step="${f.st}" aria-label="${f.l}">
+  </div>`;
+}
+
+function buildFields(){
+  const groups = {};
+  FIELDS.forEach(f => { (groups[f.g] = groups[f.g] || []).push(f); });
+  Object.keys(groups).forEach(gid => {
+    const el = document.getElementById(gid);
+    if(el) el.innerHTML = groups[gid].map(fieldHTML).join("");
+  });
+  FIELDS.forEach(wireField);
+}
+
+function clamp(f,v){ return Math.min(f.max, Math.max(f.min, v)); }
+function setVal(k, v, skipRender){
+  const f = F[k];
+  const dec = f.dec;
+  v = clamp(f, v);
+  v = Math.round(v * Math.pow(10,dec+2)) / Math.pow(10,dec+2);
+  S[k] = v;
+  syncField(k);
+  if(!skipRender) render();
+}
+function syncField(k){
+  const f = F[k], node = document.querySelector(`.field[data-k="${k}"]`);
+  if(!node) return;
+  const inp = node.querySelector("input.num"), rng = node.querySelector("input[type=range]");
+  if(document.activeElement !== inp) inp.value = nf(S[k], f.dec);
+  inp.setAttribute("aria-valuenow", S[k]);
+  rng.value = S[k];
+  const pre = node.querySelector(".aff.pre");
+  if(pre && f.pre === "ccy") pre.textContent = C();
+}
+
+function wireField(f){
+  const node = document.querySelector(`.field[data-k="${f.k}"]`);
+  if(!node) return;
+  const inp = node.querySelector("input.num");
+  const rng = node.querySelector("input[type=range]");
+  const lab = node.querySelector("label");
+
+  rng.addEventListener("input", () => setVal(f.k, parseFloat(rng.value)));
+
+  // typing
+  inp.addEventListener("focus", () => { inp.value = String(S[f.k]); inp.select(); });
+  inp.addEventListener("blur",  () => { commit(); syncField(f.k); });
+  inp.addEventListener("keydown", e => {
+    if(e.key === "Enter"){ commit(); inp.blur(); }
+    else if(e.key === "ArrowUp" || e.key === "ArrowDown"){
+      e.preventDefault();
+      const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
+      setVal(f.k, S[f.k] + f.st*mult*(e.key==="ArrowUp"?1:-1));
+      inp.value = String(S[f.k]);
+    }
+  });
+  function commit(){
+    const raw = inp.value.replace(/[^0-9.\-]/g,"");
+    const v = parseFloat(raw);
+    if(isFinite(v)) setVal(f.k, v); else syncField(f.k);
+  }
+
+  // wheel to scrub
+  const onWheel = e => {
+    e.preventDefault();
+    const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
+    setVal(f.k, S[f.k] - Math.sign(e.deltaY) * f.st * mult);
+    if(document.activeElement === inp) inp.value = String(S[f.k]);
+  };
+  inp.addEventListener("wheel", onWheel, {passive:false});
+  lab.addEventListener("wheel", onWheel, {passive:false});
+
+  // drag to scrub
+  [inp, lab].forEach(handle => {
+    handle.addEventListener("pointerdown", e => {
+      if(e.button !== 0) return;
+      const startX = e.clientX, startV = S[f.k];
+      let moved = false;
+      const isInput = handle === inp;
+      const move = ev => {
+        const dx = ev.clientX - startX;
+        if(!moved && Math.abs(dx) < 3) return;
+        if(!moved){ moved = true; document.body.classList.add("dragging"); handle.setPointerCapture(e.pointerId); }
+        const mult = ev.shiftKey ? 10 : (ev.altKey ? 0.1 : 1);
+        setVal(f.k, startV + Math.round(dx/3) * f.st * mult);
+      };
+      const up = () => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        document.body.classList.remove("dragging");
+        if(!moved && isInput) inp.focus();
+      };
+      if(isInput && document.activeElement === inp) return; // let them click to place caret
+      if(isInput) e.preventDefault();
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    });
+  });
+}
+
+/* which income/opex fields are visible depends on the mode toggles */
+function applyModes(){
+  const show = (k, on) => {
+    const n = document.querySelector(`.field[data-k="${k}"]`);
+    if(n) n.style.display = on ? "" : "none";
+  };
+  show("rentPsf",  S.revMode === "psf");
+  show("revTotal", S.revMode === "total");
+  show("opexPct",  S.opexMode === "pct");
+  show("opexPsf",  S.opexMode === "psf");
+  show("amortYrs", !S.io);
+  segSet("revSeg","rev", S.revMode);
+  segSet("opexSeg","opex", S.opexMode);
+  segSet("ioSeg","io", String(S.io));
+  segSet("capSeg","cap", String(S.capInt));
+  segSet("ccySeg","ccy", S.ccy);
+}
+function segSet(id, attr, val){
+  document.querySelectorAll(`#${id} button`).forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset[attr] === val)));
+}
+
+/* ==========================================================================
+   6. CHART HELPERS
+   ========================================================================== */
+const NS = "http://www.w3.org/2000/svg";
+const tip = document.getElementById("tip");
+function showTip(e, html){
+  tip.innerHTML = html; tip.style.opacity = "1";
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY - r.height - 12;
+  if(x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if(y < 8) y = e.clientY + 18;
+  tip.style.left = x+"px"; tip.style.top = y+"px";
+}
+function hideTip(){ tip.style.opacity = "0"; }
+function el(tag, attrs, parent){
+  const n = document.createElementNS(NS, tag);
+  for(const k in attrs) n.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(n);
+  return n;
+}
+function niceTicks(min, max, count){
+  const span = (max - min) || 1;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm >= 5 ? 10 : norm >= 2 ? 5 : norm >= 1 ? 2 : 1) * mag;
+  const out = [];
+  for(let v = Math.floor(min/step)*step; v <= max + step*0.001; v += step) out.push(v);
+  return out;
+}
+
+/* ---- chart 1: operating cash flow per year ---- */
+function drawCashChart(m){
+  const svg = document.getElementById("cfChart");
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 780, H = 260;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {t:22, r:14, b:48, l:64};
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+
+  const data = m.years;
+  let lo = Math.min(0, ...data.map(r => r.cf));
+  let hi = Math.max(0, ...data.map(r => r.cf));
+  const ticks = niceTicks(lo, hi, 4);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length-1]);
+  const Y = v => pad.t + ih - (v - lo)/((hi-lo)||1) * ih;
+  const band = iw / data.length;
+  const bw = Math.min(24, band * 0.55);
+
+  ticks.forEach(t => {
+    el("line",{x1:pad.l,x2:W-pad.r,y1:Y(t),y2:Y(t),stroke:"var(--grid)","stroke-width":1},svg);
+    el("text",{x:pad.l-9,y:Y(t)+4,"text-anchor":"end",fill:"var(--muted)","font-size":11,
+               "font-variant-numeric":"tabular-nums"},svg).textContent = moneyC(t);
+  });
+  el("line",{x1:pad.l,x2:W-pad.r,y1:Y(0),y2:Y(0),stroke:"var(--axis)","stroke-width":1},svg);
+
+  const peak = data.reduce((a,b) => b.cf > a.cf ? b : a);
+
+  data.forEach((r,i) => {
+    const cx = pad.l + band*i + band/2;
+    const y0 = Y(Math.max(0, r.cf)), y1 = Y(Math.min(0, r.cf));
+    const h = Math.max(1, y1 - y0);
+    el("rect",{x:cx-bw/2, y:y0, width:bw, height:h, rx:4,
+               fill: r.cf >= 0 ? "var(--s1)" : "var(--crit)"},svg);
+
+    // year + the cash-on-cash figure the model is really about
+    el("text",{x:cx, y:H-27, "text-anchor":"middle", fill:"var(--muted)","font-size":11},svg)
+      .textContent = "Y"+r.y;
+    el("text",{x:cx, y:H-11, "text-anchor":"middle", fill: r.coc>=0?"var(--ink-2)":"var(--crit)",
+               "font-size":11,"font-weight":600,"font-variant-numeric":"tabular-nums"},svg)
+      .textContent = pct(r.coc,1);
+
+    // label only the first and the best year, so the numbers stay readable
+    if(r === peak || i === 0){
+      el("text",{x:cx, y: r.cf>=0 ? y0-7 : y1+14, "text-anchor":"middle", fill:"var(--ink)",
+                 "font-size":11.5,"font-weight":620},svg).textContent = moneyC(r.cf);
+    }
+
+    const hit = el("rect",{x:pad.l+band*i, y:pad.t, width:band, height:ih, fill:"transparent"},svg);
+    hit.style.cursor = "crosshair";
+    hit.addEventListener("mousemove", e => showTip(e,
+      `<b>Year ${r.y}</b>
+       <div>Revenue <em>${money(r.eff)}</em>${r.ramp<0.999?` (${Math.round(r.ramp*100)}% let)`:""}</div>
+       <div>Operating costs <em>${money(r.opex)}</em></div>
+       <div>NOI <em>${money(r.noi)}</em></div>
+       <div>Debt service <em>${money(r.ds)}</em></div>
+       <div>Cash flow <em>${money(r.cf)}</em></div>
+       <div>Cash-on-cash <em>${pct(r.coc)}</em></div>
+       <div>DSCR <em>${isFinite(r.dscr)?r.dscr.toFixed(2):"∞"}</em></div>`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+
+}
+
+/* ---- chart 2: cumulative cash vs equity ---- */
+function drawCumChart(m){
+  const svg = document.getElementById("cumChart");
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 780, H = 220;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {t:16, r:66, b:28, l:64};
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+
+  const pts = [{y:0, v:0}].concat(m.years.map(r => ({y:r.y, v:r.cum})));
+  pts[pts.length-1] = {y:pts[pts.length-1].y, v:pts[pts.length-1].v, sale:true};
+  const withSale = pts[pts.length-1].v + m.netProceeds;
+
+  let hi = Math.max(m.equity, withSale, 0), lo = Math.min(0, ...pts.map(p=>p.v));
+  const ticks = niceTicks(lo, hi, 4);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length-1]);
+  const X = y => pad.l + (y/(m.hold||1))*iw;
+  const Y = v => pad.t + ih - (v-lo)/((hi-lo)||1)*ih;
+
+  ticks.forEach(t => {
+    el("line",{x1:pad.l,x2:W-pad.r,y1:Y(t),y2:Y(t),stroke:"var(--grid)","stroke-width":1},svg);
+    el("text",{x:pad.l-9,y:Y(t)+4,"text-anchor":"end",fill:"var(--muted)","font-size":11},svg).textContent = moneyC(t);
+  });
+
+  // equity invested reference line
+  el("line",{x1:pad.l,x2:W-pad.r,y1:Y(m.equity),y2:Y(m.equity),stroke:"var(--axis)","stroke-width":1,
+             "stroke-dasharray":"1 0"},svg);
+  el("text",{x:W-pad.r+6,y:Y(m.equity)+4,fill:"var(--muted)","font-size":11},svg).textContent = "equity in";
+
+  const d = pts.map((p,i) => (i?"L":"M")+X(p.y)+" "+Y(p.v)).join(" ");
+  el("path",{d, fill:"none", stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
+
+  // exit jump
+  el("path",{d:`M${X(m.hold)} ${Y(pts[pts.length-1].v)} L${X(m.hold)} ${Y(withSale)}`,
+             stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round",fill:"none"},svg);
+  el("circle",{cx:X(m.hold),cy:Y(withSale),r:4.5,fill:"var(--s2)",stroke:"var(--surface)","stroke-width":2},svg);
+  el("text",{x:X(m.hold)+9,y:Y(withSale)+4,fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
+    .textContent = moneyC(withSale);
+
+  pts.forEach((p,i) => {
+    if(!i) return;
+    el("circle",{cx:X(p.y),cy:Y(p.v),r:3.5,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":2},svg);
+  });
+  for(let y=0; y<=m.hold; y++){
+    if(m.hold > 12 && y % 2) continue;
+    el("text",{x:X(y),y:H-9,"text-anchor":"middle",fill:"var(--muted)","font-size":11},svg).textContent = y?("Y"+y):"0";
+  }
+
+  // hover
+  m.years.forEach(r => {
+    const hit = el("rect",{x:X(r.y)-iw/(m.hold*2||1), y:pad.t, width:iw/(m.hold||1), height:ih, fill:"transparent"},svg);
+    hit.addEventListener("mousemove", e => showTip(e,
+      `<b>End of year ${r.y}</b>
+       <div>Cumulative cash back <em>${money(r.cum)}</em></div>
+       <div>That is <em>${pct(r.cumPct)}</em> of your equity</div>
+       <div>Loan balance <em>${money(r.balance)}</em></div>`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+}
+
+/* ---- chart 3: comps spread ---- */
+function drawCompChart(rows, subj){
+  const svg = document.getElementById("compChart");
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 900, H = 150;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {t:34, r:20, b:30, l:20};
+  const iw = W - pad.l - pad.r;
+
+  const vals = rows.map(r => r.ppsf).sort((a,b)=>a-b);
+  if(!vals.length){
+    el("text",{x:W/2,y:H/2,"text-anchor":"middle",fill:"var(--muted)","font-size":13},svg)
+      .textContent = "No comparable sales match the current filters.";
+    return;
+  }
+  const q = p => {
+    const i = (vals.length-1)*p, lo = Math.floor(i), hi = Math.ceil(i);
+    return vals[lo] + (vals[hi]-vals[lo])*(i-lo);
+  };
+  const lo0 = Math.min(vals[0], subj), hi0 = Math.max(vals[vals.length-1], subj);
+  const padv = (hi0-lo0)*0.12 || 10;
+  const lo = lo0-padv, hi = hi0+padv;
+  const X = v => pad.l + (v-lo)/((hi-lo)||1)*iw;
+  const cy = 78;
+
+  // axis
+  niceTicks(lo, hi, 8).forEach(t => {
+    if(t < lo || t > hi) return;
+    el("line",{x1:X(t),x2:X(t),y1:pad.t,y2:H-pad.b,stroke:"var(--grid)","stroke-width":1},svg);
+    el("text",{x:X(t),y:H-11,"text-anchor":"middle",fill:"var(--muted)","font-size":11},svg)
+      .textContent = C()+nf(t,0);
+  });
+
+  const q1 = q(0.25), md = q(0.5), q3 = q(0.75);
+  // whiskers
+  el("line",{x1:X(vals[0]),x2:X(vals[vals.length-1]),y1:cy,y2:cy,stroke:"var(--axis)","stroke-width":1},svg);
+  // IQR box
+  el("rect",{x:X(q1),y:cy-13,width:Math.max(2,X(q3)-X(q1)),height:26,rx:4,fill:"var(--s1)","fill-opacity":.14,
+             stroke:"var(--s1)","stroke-width":1,"stroke-opacity":.35},svg);
+  el("line",{x1:X(md),x2:X(md),y1:cy-13,y2:cy+13,stroke:"var(--s1)","stroke-width":2,"stroke-linecap":"round"},svg);
+
+  // individual sales
+  rows.forEach((r,i) => {
+    const jitter = ((i*37)%7 - 3) * 2.6;
+    const c = el("circle",{cx:X(r.ppsf),cy:cy+jitter,r:4.5,fill:"var(--s1)","fill-opacity":.85,
+                           stroke:"var(--surface)","stroke-width":2},svg);
+    c.style.cursor = "pointer";
+    c.addEventListener("mousemove", e => showTip(e,
+      `<b>${r.a || "Untitled comp"}</b>
+       <div><em>${C()}${nf(r.ppsf,0)}</em> per sq ft</div>
+       <div>${nf(r.s,0)} sq ft · ${money(r.p)}</div>
+       <div>${r.d || "—"} · ${nf(r.m,1)} miles away</div>`));
+    c.addEventListener("mouseleave", hideTip);
+  });
+
+  // subject marker
+  const sx = X(subj);
+  el("line",{x1:sx,x2:sx,y1:pad.t-8,y2:H-pad.b,stroke:"var(--s2)","stroke-width":2},svg);
+  el("path",{d:`M${sx-6} ${pad.t-8} L${sx+6} ${pad.t-8} L${sx} ${pad.t} Z`,fill:"var(--s2)"},svg);
+  const anchor = sx > W-150 ? "end" : "start";
+  el("text",{x: sx + (anchor==="end"?-9:9), y:pad.t-13, "text-anchor":anchor, fill:"var(--ink)",
+             "font-size":12,"font-weight":640},svg)
+    .textContent = `This property ${C()}${nf(subj,0)}/sf`;
+
+  ["Low "+C()+nf(vals[0],0), "Median "+C()+nf(md,0), "High "+C()+nf(vals[vals.length-1],0)]
+    .forEach((t,i) => {
+      const x = [X(vals[0]), X(md), X(vals[vals.length-1])][i];
+      el("text",{x, y:cy+34, "text-anchor":"middle", fill:"var(--muted)","font-size":10.5},svg).textContent = t;
+    });
+}
+
+/* ==========================================================================
+   7. COMPS
+   ========================================================================== */
+function compRows(){
+  return COMPS.map(c => {
+    const s = +c.s || 0, p = +c.p || 0;
+    return Object.assign({}, c, {s, p, m:+c.m||0, ppsf: s>0 ? p/s : 0, yrs: ageYears(c.d)});
+  });
+}
+function ageYears(d){
+  if(!d) return 99;
+  const t = Date.parse(/^\d{4}-\d{2}$/.test(d) ? d+"-15" : d);
+  if(isNaN(t)) return 99;
+  return (Date.now() - t)/(365.25*24*3600*1000);
+}
+function matches(r){
+  const tol = S.cSqftTol/100;
+  return r.s > 0 && r.p > 0
+      && Math.abs(r.s - S.sqft) <= S.sqft*tol
+      && r.m <= S.cDist
+      && r.yrs <= S.cYears && r.yrs >= 0;
+}
+
+function renderComps(m){
+  const all = compRows();
+  const hits = all.filter(matches).sort((a,b) => a.ppsf - b.ppsf);
+  const subj = S.purchase / Math.max(1, S.sqft);
+
+  // table
+  const tb = document.querySelector("#compTable tbody");
+  tb.innerHTML = all.map((r,i) => {
+    const on = matches(r);
+    return `<tr class="${on?"":"out"}" data-i="${i}">
+      <td><input class="txt" data-f="a" value="${(r.a||"").replace(/"/g,"&quot;")}" placeholder="Address"></td>
+      <td><input data-f="s" value="${r.s||""}"></td>
+      <td><input data-f="p" value="${r.p||""}"></td>
+      <td><input data-f="d" value="${r.d||""}" placeholder="YYYY-MM" style="text-align:right"></td>
+      <td><input data-f="m" value="${r.m||""}"></td>
+      <td style="font-weight:620">${r.ppsf? C()+nf(r.ppsf,0) : "—"}</td>
+      <td><span class="pill ${on?"in":""}">${on?"in set":"filtered out"}</span></td>
+      <td><button class="del" title="Remove" aria-label="Remove row">×</button></td>
+    </tr>`;
+  }).join("");
+  tb.querySelectorAll("input").forEach(inp => {
+    inp.addEventListener("change", e => {
+      const i = +e.target.closest("tr").dataset.i, f = e.target.dataset.f;
+      COMPS[i][f] = (f === "a" || f === "d") ? e.target.value : (parseFloat(e.target.value.replace(/[^0-9.\-]/g,"")) || 0);
+      save(); render();
+    });
+  });
+  tb.querySelectorAll(".del").forEach(b => b.addEventListener("click", e => {
+    COMPS.splice(+e.target.closest("tr").dataset.i, 1); save(); render();
+  }));
+
+  // stats
+  const vals = hits.map(r => r.ppsf).sort((a,b)=>a-b);
+  const q = p => { if(!vals.length) return 0;
+    const i=(vals.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i);
+    return vals[lo]+(vals[hi]-vals[lo])*(i-lo); };
+  const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
+  const below = vals.filter(v => v < subj).length;
+  const pctile = vals.length ? below/vals.length : 0;
+  const allIn = m.totalCost / Math.max(1,S.sqft);
+
+  document.getElementById("compStats").innerHTML = [
+    ["Your purchase", C()+nf(subj,0)+"/sf"],
+    ["Your all-in cost", C()+nf(allIn,0)+"/sf"],
+    ["Comps in set", nf(hits.length,0)+" of "+nf(all.length,0)],
+    ["Low", vals.length?C()+nf(vals[0],0):"—"],
+    ["25th pct", vals.length?C()+nf(q(0.25),0):"—"],
+    ["Median", vals.length?C()+nf(q(0.5),0):"—"],
+    ["75th pct", vals.length?C()+nf(q(0.75),0):"—"],
+    ["High", vals.length?C()+nf(vals[vals.length-1],0):"—"],
+    ["Mean", vals.length?C()+nf(mean,0):"—"],
+    ["You sit at", vals.length?Math.round(pctile*100)+"th pct":"—"],
+    ["vs median", vals.length? (subj>=q(0.5)?"+":"")+Math.round((subj/q(0.5)-1)*100)+"%" : "—"]
+  ].map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v}</div></div>`).join("");
+
+  drawCompChart(hits, subj);
+}
+
+/* ==========================================================================
+   8. RENDER
+   ========================================================================== */
+function render(){
+  const m = model();
+  FIELDS.forEach(f => syncField(f.k));
+
+  // ---- hero ----
+  document.getElementById("heroEquity").textContent = money(m.equity);
+  document.getElementById("heroNote").textContent =
+    `${moneyC(m.totalCost)} total cost less ${moneyC(m.totalDebt)} of debt · ` +
+    `${pct(m.totalDebt/(m.totalCost||1),0)} loan to cost · ` +
+    `${money(m.equity/Math.max(1,S.sqft),0)}/sf of your own money`;
+
+  const irrEl = document.getElementById("kIrr");
+  irrEl.textContent = m.irr === null ? "n/a" : pct(m.irr,1);
+  irrEl.className = "v2 " + (m.irr === null ? "" : m.irr >= 0 ? "pos" : "neg");
+  const multEl = document.getElementById("kMult");
+  multEl.textContent = m.mult.toFixed(2)+"×";
+  multEl.className = "v2 " + (m.mult >= 1 ? "pos" : "neg");
+  const cocEl = document.getElementById("kCoc");
+  cocEl.textContent = pct(m.avgCoc,1);
+  cocEl.className = "v2 " + (m.avgCoc >= 0 ? "pos" : "neg");
+
+  // ---- tiles ----
+  const psf = v => money(v/Math.max(1,S.sqft), 0)+"/sf";
+  document.getElementById("kCost").textContent = moneyC(m.totalCost);
+  document.getElementById("kCostPsf").textContent =
+    `${psf(m.totalCost)} all-in · ${psf(S.purchase)} bricks · ${psf(m.fitTotal)} fit-out`;
+  document.getElementById("kDebt").textContent = moneyC(m.totalDebt);
+  document.getElementById("kLtc").textContent =
+    `${moneyC(m.debtProp)} @ ${nf(S.rateProp,2)}% + ${moneyC(m.debtFit)} @ ${nf(S.rateFit,2)}% · blended ${pct(m.blended,2)}`;
+  document.getElementById("kNoi").textContent = moneyC(m.stabNOI);
+  document.getElementById("kNoiPsf").textContent = psf(m.stabNOI)+" stabilised";
+  const yoc = m.stabNOI/(m.totalCost||1);
+  document.getElementById("kYoc").textContent = pct(yoc,2);
+  const spread = yoc - S.exitCap/100;
+  const spEl = document.getElementById("kSpread");
+  spEl.textContent = (spread>=0?"+":"") + Math.round(spread*10000) + " bps vs exit cap";
+  spEl.className = "d " + (spread >= 0 ? "pos" : "neg");
+  document.getElementById("kExit").textContent = moneyC(m.exitValue);
+  document.getElementById("kExitPsf").textContent =
+    `${psf(m.exitValue)} · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`;
+  const d1 = m.years[0].dscr, ds = m.stabDS>0 ? m.stabNOI/m.stabDS : Infinity;
+  const dEl = document.getElementById("kDscr");
+  dEl.textContent = (isFinite(d1)?d1.toFixed(2):"∞") + " / " + (isFinite(ds)?ds.toFixed(2):"∞");
+  dEl.className = "v " + (isFinite(ds) && ds < 1.25 ? "neg" : "pos");
+  const bkIdx = m.years.findIndex(r => r.cum >= m.equity);
+  document.getElementById("kBreak").textContent = bkIdx >= 0
+    ? `cash back by year ${m.years[bkIdx].y}` : `cash back needs the sale`;
+
+  document.getElementById("chartSub").textContent =
+    `${m.hold}-year hold · equity ${moneyC(m.equity)}`;
+
+  // ---- table ----
+  const tb = document.querySelector("#cfTable tbody");
+  const maxAbs = Math.max(...m.years.map(r => Math.abs(r.cf)), 1);
+  tb.innerHTML = m.years.map(r => `
+    <tr>
+      <td>Year ${r.y}${r.ramp < 0.999 ? ` <span class="pill">${Math.round(r.ramp*100)}% let</span>` : ""}</td>
+      <td>${money(r.eff)}</td>
+      <td>${money(r.noi)}</td>
+      <td>${money(r.ds)}</td>
+      <td class="${r.cf>=0?"pos":"neg"}">${money(r.cf)}<span class="bar" style="width:${Math.abs(r.cf)/maxAbs*34}px;background:${r.cf>=0?"var(--s1)":"var(--crit)"}"></span></td>
+      <td class="${r.coc>=0?"pos":"neg"}">${pct(r.coc,1)}</td>
+      <td>${money(r.cum)}</td>
+      <td>${pct(r.cumPct,0)}</td>
+    </tr>`).join("") + `
+    <tr class="exit">
+      <td>Sale, end Y${m.hold}</td>
+      <td colspan="2">${moneyC(m.exitValue)} @ ${nf(S.exitCap,2)}% cap on ${moneyC(m.forwardNOI)}</td>
+      <td>−${moneyC(m.endBalance)} loan</td>
+      <td class="${m.netProceeds>=0?"pos":"neg"}">${money(m.netProceeds)}</td>
+      <td class="${m.netProceeds>=0?"pos":"neg"}">${pct(m.netProceeds/(m.equity||1),0)}</td>
+      <td>${money(m.totalOut)}</td>
+      <td>${pct(m.mult,0)}</td>
+    </tr>`;
+
+  drawCashChart(m);
+  drawCumChart(m);
+  renderComps(m);
+
+  // hints under labels
+  const h = (k,v) => { const n = document.getElementById("hint-"+k); if(n) n.textContent = v; };
+  h("purchase", money(S.purchase/Math.max(1,S.sqft),0)+"/sf");
+  h("fitOut",   money(m.fitTotal/Math.max(1,S.sqft),0)+"/sf incl. contingency");
+  h("ltvProp",  moneyC(m.debtProp)+" borrowed");
+  h("ltcFit",   moneyC(m.debtFit)+" borrowed");
+  h("acqPct",   moneyC(m.acqCosts));
+  h("contPct",  moneyC(m.fitTotal - S.fitOut));
+  h("buildMon", S.capInt ? moneyC(m.cpInt)+" interest in cash" : "interest ignored");
+  h("rentPsf",  moneyC(m.baseRev)+" a year");
+  h("revTotal", money(m.baseRev/Math.max(1,S.sqft),2)+"/sf");
+  h("opexPct",  moneyC(m.stabNOI)+" NOI");
+  h("opexPsf",  moneyC(m.stabNOI)+" NOI");
+  h("exitCap",  moneyC(m.exitValue)+" gross");
+  h("hold",     m.irr===null?"":pct(m.irr,1)+" IRR");
+  h("sqft",     "");
+  h("amortYrs", moneyC(m.stabDS)+" a year");
+
+  save();
+}
+
+/* ==========================================================================
+   9. WIRING
+   ========================================================================== */
+function setCcy(c){ S.ccy = c; applyModes(); buildAffixes(); render(); }
+function buildAffixes(){
+  FIELDS.forEach(f => {
+    if(f.pre !== "ccy") return;
+    const n = document.querySelector(`.field[data-k="${f.k}"] .aff.pre`);
+    if(n) n.textContent = C();
+  });
+}
+
+document.getElementById("ccySeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(b) setCcy(b.dataset.ccy);
+});
+document.getElementById("revSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  // carry the number across so the switch doesn't jolt the model
+  if(b.dataset.rev === "total" && S.revMode === "psf") S.revTotal = S.rentPsf * S.sqft;
+  if(b.dataset.rev === "psf" && S.revMode === "total") S.rentPsf = S.revTotal / Math.max(1,S.sqft);
+  S.revMode = b.dataset.rev; applyModes(); render();
+});
+document.getElementById("opexSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  S.opexMode = b.dataset.opex; applyModes(); render();
+});
+document.getElementById("ioSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  S.io = +b.dataset.io; applyModes(); render();
+});
+document.getElementById("capSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  S.capInt = +b.dataset.cap; applyModes(); render();
+});
+document.getElementById("propName").addEventListener("input", e => { S.name = e.target.value; save(); });
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
+  document.documentElement.setAttribute("data-theme", next);
+  try{ localStorage.setItem(KEY+"-theme", next); }catch(e){}
+  render();
+});
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if(!confirm("Reset every assumption to the defaults? Your comps list is kept.")) return;
+  const name = S.name, ccy = S.ccy;
+  S = Object.assign({}, DEFAULTS, {name, ccy});
+  applyModes(); buildAffixes(); render();
+});
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  const m = model();
+  const lines = [
+    `${S.name} — ${nf(S.sqft,0)} sq ft`,
+    `Purchase ${money(S.purchase)} (${money(S.purchase/S.sqft,0)}/sf) + fit-out ${money(m.fitTotal)} (${money(m.fitTotal/S.sqft,0)}/sf)`,
+    `Total cost ${money(m.totalCost)} · debt ${money(m.totalDebt)} · CASH IN ${money(m.equity)}`,
+    `Stabilised NOI ${money(m.stabNOI)} · yield on cost ${pct(m.stabNOI/m.totalCost,2)}`,
+    `${m.hold}-yr hold · IRR ${m.irr===null?"n/a":pct(m.irr,1)} · ${m.mult.toFixed(2)}x · avg CoC ${pct(m.avgCoc,1)}`,
+    `Exit ${money(m.exitValue)} @ ${nf(S.exitCap,2)}% cap · net proceeds ${money(m.netProceeds)}`,
+    "",
+    "Year\tNOI\tDebt service\tCash flow\tCash-on-cash"
+  ].concat(m.years.map(r => `${r.y}\t${Math.round(r.noi)}\t${Math.round(r.ds)}\t${Math.round(r.cf)}\t${pct(r.coc,1)}`));
+  try{
+    await navigator.clipboard.writeText(lines.join("\n"));
+    const b = document.getElementById("copyBtn"); const t = b.textContent;
+    b.textContent = "Copied"; setTimeout(()=>b.textContent=t, 1400);
+  }catch(e){ alert(lines.join("\n")); }
+});
+
+document.getElementById("addComp").addEventListener("click", () => {
+  COMPS.push({a:"", s:S.sqft, p:S.purchase, d:new Date().toISOString().slice(0,7), m:1});
+  save(); render();
+});
+document.getElementById("clearComps").addEventListener("click", () => {
+  if(confirm("Remove every comparable sale?")){ COMPS = []; save(); render(); }
+});
+document.getElementById("sampleComps").addEventListener("click", () => {
+  COMPS = SAMPLE_COMPS.map(c => Object.assign({}, c)); save(); render();
+});
+
+/* quote-aware split, with a repair pass for spreadsheet exports that leave
+   thousands separators unquoted ("6,900,000" arriving as three cells) */
+function splitLine(line){
+  if(line.includes("\t")) return line.split("\t").map(c => c.trim());
+  const raw = []; let cur = "", q = false;
+  for(let i=0; i<line.length; i++){
+    const ch = line[i];
+    if(ch === '"'){ if(q && line[i+1] === '"'){ cur += '"'; i++; } else q = !q; }
+    else if(ch === "," && !q){ raw.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  raw.push(cur);
+  const cells = raw.map(c => c.trim());
+  if(cells.length <= 5) return cells;
+  const merged = [];
+  for(let i=0; i<cells.length; i++){
+    let cell = cells[i];
+    while(i+1 < cells.length && /^-?[\d ]*\d$/.test(cell) && /^\d{3}$/.test(cells[i+1])){
+      cell += cells[i+1]; i++;
+    }
+    merged.push(cell);
+  }
+  return merged;
+}
+
+function parsePaste(text){
+  const out = [];
+  text.split(/\r?\n/).forEach(line => {
+    if(!line.trim()) return;
+    const cells = splitLine(line);
+    if(cells.length < 3) return;
+    const num = s => parseFloat(String(s).replace(/[^0-9.\-]/g,""));
+    // skip a header row
+    if(!isFinite(num(cells[1])) || !isFinite(num(cells[2]))) return;
+    out.push({
+      a: String(cells[0]).trim().replace(/^["']|["']$/g,""),
+      s: num(cells[1]) || 0,
+      p: num(cells[2]) || 0,
+      d: (cells[3]||"").trim().replace(/^["']|["']$/g,""),
+      m: num(cells[4]) || 0
+    });
+  });
+  return out;
+}
+function doImport(append){
+  const rows = parsePaste(document.getElementById("pasteBox").value);
+  const msg = document.getElementById("importMsg");
+  if(!rows.length){ msg.textContent = "Nothing readable — need address, sq ft, price at minimum."; return; }
+  COMPS = append ? COMPS.concat(rows) : rows;
+  msg.textContent = `${rows.length} row${rows.length>1?"s":""} ${append?"appended":"imported"}.`;
+  save(); render();
+}
+document.getElementById("importBtn").addEventListener("click", () => doImport(false));
+document.getElementById("appendBtn").addEventListener("click", () => doImport(true));
+
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 120); });
+
+/* ---------- boot ---------- */
+(function init(){
+  try{ const t = localStorage.getItem(KEY+"-theme"); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
+  load();
+  buildFields();
+  document.getElementById("propName").value = S.name;
+  applyModes();
+  buildAffixes();
+  render();
+})();
+</script>
+</body>
+</html>
