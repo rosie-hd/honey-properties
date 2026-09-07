@@ -90,6 +90,12 @@ header.top .spacer{flex:1}
   white-space:nowrap;border-bottom:1px solid transparent;
 }
 #propLinkOpen:hover{border-bottom-color:var(--honey)}
+#propLinkNote{flex:none;font-size:11px;color:var(--muted);white-space:nowrap}
+@media (max-width:700px){#propLinkNote{display:none}}
+.found ol.howto{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.found ol.howto li{display:list-item;font-size:12.5px;color:var(--ink-2);line-height:1.55}
+.found ol.howto b{color:var(--ink);font-weight:600}
+.found p.miss{margin:0;line-height:1.6;max-width:62ch}
 #propName:focus{outline:none;border-bottom-color:var(--honey)}
 .btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
 .btn{
@@ -293,6 +299,7 @@ details.imp summary:hover{color:var(--ink)}
              placeholder="Paste the listing link — Rightmove, LoopNet, the agent's PDF…"
              aria-label="Listing link for this property">
       <a id="propLinkOpen" href="#" target="_blank" rel="noopener noreferrer" hidden>Open listing &#8599;</a>
+      <span id="propLinkNote" hidden>saved &middot; the figures below are still yours to fill in</span>
     </div>
   </div>
   <div class="spacer"></div>
@@ -315,7 +322,7 @@ details.imp summary:hover{color:var(--ink)}
     <div class="or">or</div>
     <div class="pastewrap">
       <textarea id="listingText" spellcheck="false"
-        placeholder="Paste the listing text here — on Rightmove or LoopNet, select all on the page, copy, paste. This is the most reliable route."></textarea>
+        placeholder="Paste the listing TEXT here — not the link. On Rightmove or LoopNet: select all on the page (Cmd-A), copy, paste. Reads instantly, no button needed."></textarea>
       <div class="btnrow">
         <button class="btn primary" id="readTextBtn">Read the text</button>
         <span class="note" style="font-size:11.5px;color:var(--muted)">Nothing is uploaded — the file is read inside your browser.</span>
@@ -1319,6 +1326,7 @@ document.getElementById("propName").addEventListener("input", e => { S.name = e.
    so the figures below it stay yours to enter. */
 const linkInput = document.getElementById("propLink");
 const linkOpen  = document.getElementById("propLinkOpen");
+const linkNote  = document.getElementById("propLinkNote");
 function syncLink(){
   const raw = (S.link || "").trim();
   const href = raw && !/^https?:\/\//i.test(raw) ? "https://" + raw : raw;
@@ -1331,6 +1339,9 @@ function syncLink(){
   }catch(e){ ok = false; }
   linkOpen.hidden = !ok;
   if(ok){ linkOpen.href = href; linkOpen.title = href; }
+  /* Without this the box looks inert: a saved link only revealed a small
+     "Open listing" and nothing said the figures were still yours to fill in. */
+  linkNote.hidden = !ok;
 }
 linkInput.addEventListener("input", e => { S.link = e.target.value; syncLink(); save(); });
 document.getElementById("themeBtn").addEventListener("click", () => {
@@ -1445,8 +1456,15 @@ let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(ren
 const PDF_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 const OCR_SRC    = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/7.0.0/tesseract.min.js";
 
-const MONEY_RE = /([£$€])\s*(\d[\d,.\s]*\d|\d)\s*(million|billion|mn|bn|m|k)?\b/gi;
-const AREA_RE  = /(\d[\d,.\s]*\d|\d)\s*(sq\.?\s?ft|sqft|ft²|ft2|square\s+feet|sq\.?\s?m|sqm|m²|m2|square\s+met(?:re|er)s?|sf)\b/gi;
+/* A number may carry thousands separators but must never run across a line
+   break: a price sitting directly above a floor area ("£4,250,000\n2,150 sq ft")
+   would otherwise be swallowed as the single impossible figure 4,250,0002,150,
+   and both facts lost. Whitespace inside a number is one separator, never a
+   newline. */
+const NUM = String.raw`\d{1,3}(?:[,   ]\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?`;
+const GAP = String.raw`[   ]*`;
+const MONEY_RE = new RegExp(String.raw`([£$€])${GAP}(${NUM})${GAP}(million|billion|mn|bn|m|k)?\b`, "gi");
+const AREA_RE  = new RegExp(String.raw`(${NUM})${GAP}(sq\.?\s?ft|sqft|ft²|ft2|square\s+feet|sq\.?\s?m|sqm|m²|m2|square\s+met(?:re|er)s?|sf)\b`, "gi");
 const URL_RE   = /https?:\/\/[^\s"'<>)]+/i;
 
 /* money that is plainly not a purchase price */
@@ -1594,16 +1612,23 @@ function showFound(facts, sourceLabel){
   add("address", "Property name",     facts.address ? facts.address.value : "");
   add("url",     "Listing link",      facts.url ? facts.url.value : "");
 
+  /* An address alone is not a reading. Without this, prose with no figures in it
+     came back as a confident "Found in…" listing only the first line. */
+  const useful = facts.price || facts.area;
   resEl.hidden = false;
-  resEl.innerHTML = rows.length
+  resEl.innerHTML = useful
     ? `<h3>Found in ${sourceLabel}</h3><ul>${rows.join("")}</ul>
        <div class="found-foot">
          <button class="btn primary" id="applyAll">Use all of these</button>
          <button class="btn" id="dismissFound">Discard</button>
          <span class="note">Check each figure against the listing before you rely on it — a brochure can label things in ways this misreads.</span>
        </div>`
-    : `<h3>Found in ${sourceLabel}</h3>
-       <p class="miss">No price or floor area turned up. If it was a scan or a photo the text isn't selectable — paste the listing text instead, or type the two figures in by hand.</p>`;
+    : `<h3>No price or floor area in ${sourceLabel}</h3>
+       <p class="miss">If it was a scan or a photo, the text isn't selectable — there is nothing to
+       read. The surest fix is to open the listing, select all (Cmd&#8209;A), copy, and paste it into
+       the box above. Otherwise the two figures are quick to type by hand: purchase price and net
+       internal area.</p>
+       ${rows.length ? `<ul style="margin-top:12px">${rows.join("")}</ul>` : ""}`;
 
   resEl.querySelectorAll("[data-apply]").forEach(b =>
     b.addEventListener("click", () => { applyFact(b.dataset.apply); b.outerHTML = '<span class="applied">Applied</span>'; }));
@@ -1671,11 +1696,55 @@ dropZone.addEventListener("drop", e => ingestFile(e.dataTransfer.files[0]));
   if(!dropZone.contains(e.target)) e.preventDefault();
 }));
 
-document.getElementById("readTextBtn").addEventListener("click", () => {
-  const t = document.getElementById("listingText").value;
-  if(!t.trim()){ status("Paste the listing text into the box first.", false, true); return; }
+/* A link pasted on its own is the most natural thing to try, and the least
+   likely to work — so it gets an answer that says why and what to do instead,
+   rather than an empty result panel. */
+function isJustLink(t){
+  const one = t.trim();
+  if(/\s/.test(one)) return false;
+  return /^https?:\/\//i.test(one) || /^(www\.)?[\w-]+(\.[\w-]+)+\/?/i.test(one);
+}
+
+function showLinkOnlyHelp(raw){
+  const href = /^https?:\/\//i.test(raw.trim()) ? raw.trim() : "https://" + raw.trim();
+  status("");
+  resEl.hidden = false;
+  resEl.innerHTML = `<h3>That's a link, not the listing text</h3>
+    <p class="miss">This page can't open another website and read it for you. Browsers block a page
+    from fetching a different site, and the portals block automated reading on top of that — so the
+    link alone carries no price and no floor area.</p>
+    <ol class="howto">
+      <li><b>Open the listing, select all and copy</b> (Cmd&#8209;A, Cmd&#8209;C), then paste here. Five seconds, and it reads perfectly.</li>
+      <li>Or <b>save the page as a PDF</b> (Cmd&#8209;P &rarr; Save as PDF) and drop it on the left.</li>
+    </ol>
+    <div class="found-foot">
+      <button class="btn primary" id="keepLink">Keep it as this deal's listing link</button>
+      <a class="btn" href="${href.replace(/"/g,"&quot;")}" target="_blank" rel="noopener noreferrer">Open the listing &#8599;</a>
+    </div>`;
+  document.getElementById("keepLink").addEventListener("click", e => {
+    S.link = raw.trim(); linkInput.value = S.link; syncLink(); save();
+    e.target.outerHTML = '<span class="applied">Kept with this deal</span>';
+  });
+}
+
+function readPastedText(t, quiet){
+  if(!t.trim()){
+    if(!quiet) status("Paste the listing text into the box first.", false, true);
+    return;
+  }
+  if(isJustLink(t)){ showLinkOnlyHelp(t); return; }
   status("");
   showFound(parseListing(t), "the text you pasted");
+}
+
+document.getElementById("readTextBtn").addEventListener("click",
+  () => readPastedText(document.getElementById("listingText").value));
+
+/* Reading on paste, so the button is never a step someone has to discover. */
+document.getElementById("listingText").addEventListener("paste", e => {
+  const dropped = (e.clipboardData || window.clipboardData);
+  const t = dropped ? dropped.getData("text") : "";
+  if(t) setTimeout(() => readPastedText(t, true), 0);
 });
 
 /* ---------- boot ---------- */
