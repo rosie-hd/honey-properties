@@ -449,6 +449,14 @@ body.on-projects .model-only{display:none !important}
       <section class="blk">
         <h2>Hold &amp; exit</h2>
         <div id="g-exit"></div>
+        <div class="toggle-row">
+          <span>Exit value</span>
+          <div class="seg" id="exitSeg" role="group" aria-label="How the exit is valued">
+            <button data-exit="cap" aria-pressed="true">Cap rate</button>
+            <button data-exit="price" aria-pressed="false">Sale price</button>
+          </div>
+        </div>
+        <div id="g-exit2"></div>
       </section>
     </div>
   </div>
@@ -594,7 +602,9 @@ const DEFAULTS = {
   opexPct:   32,
   opexPsf:   19,
   hold:      7,
+  exitMode: "cap",
   exitCap:   6.25,
+  exitPrice: 9000000,
   saleCost:  2,
   // comps filters
   cSqftTol:  25,
@@ -817,8 +827,9 @@ const FIELDS = [
   {k:"opexPsf",  l:"Operating costs",       min:0,     max:120,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-opex"},
 
   {k:"hold",     l:"Hold period",           min:1,     max:25,     st:1,    suf:" years", dec:0, g:"g-exit"},
-  {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit"},
-  {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit"},
+  {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit2"},
+  {k:"exitPrice",l:"Sale price",            min:0,     max:60000000,st:25000,pre:"ccy",   dec:0, g:"g-exit2"},
+  {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
 
   {k:"cSqftTol", l:"Size tolerance",        min:5,     max:100,    st:5,    pre:"±", suf:"%", dec:0, g:"g-comp"},
   {k:"cDist",    l:"Max distance",          min:0.25,  max:10,     st:0.25, suf:" miles", dec:2, g:"g-comp"},
@@ -928,7 +939,15 @@ function model(){
 
   const forwardNOI = years.forwardNOI;
   const endBalance = years[years.length-1].balance;
-  const exitValue  = S.exitCap > 0 ? forwardNOI / (S.exitCap/100) : 0;
+  /* Two ways to value the exit. A building held for its income is worth its
+     forward NOI capitalised; something you buy, do up and resell is worth what
+     it sells for, and a cap rate says nothing useful about it. Whichever you
+     set, the other is shown implied, so the number can be sanity-checked
+     against the way the rest of the market talks about it. */
+  const exitValue = S.exitMode === "price"
+    ? S.exitPrice
+    : (S.exitCap > 0 ? forwardNOI / (S.exitCap/100) : 0);
+  const impliedCap = exitValue > 0 ? forwardNOI / exitValue : null;
   const netProceeds = exitValue * (1 - S.saleCost/100) - endBalance;
 
   const cfs = [-equity].concat(years.map((r,i) => r.cf + (i === years.length-1 ? netProceeds : 0)));
@@ -945,7 +964,7 @@ function model(){
   const blended  = totalDebt > 0 ? (debtProp*rp + debtFit*rf)/totalDebt : 0;
 
   return {sqft, acqCosts, fitTotal, debtProp, debtFit, totalDebt, cpInt, totalCost, equity,
-          years, forwardNOI, exitValue, netProceeds, endBalance, irr:rate, mult, avgCoc,
+          years, forwardNOI, exitValue, impliedCap, netProceeds, endBalance, irr:rate, mult, avgCoc,
           stabNOI, stabDS, blended, hold, totalOut, baseRev};
 }
 
@@ -1073,10 +1092,13 @@ function applyModes(){
   show("opexPct",  S.opexMode === "pct");
   show("opexPsf",  S.opexMode === "psf");
   show("amortYrs", !S.io);
+  show("exitCap",   S.exitMode === "cap");
+  show("exitPrice", S.exitMode === "price");
   segSet("revSeg","rev", S.revMode);
   segSet("opexSeg","opex", S.opexMode);
   segSet("ioSeg","io", String(S.io));
   segSet("capSeg","cap", String(S.capInt));
+  segSet("exitSeg","exit", S.exitMode);
   segSet("ccySeg","ccy", S.ccy);
 }
 function segSet(id, attr, val){
@@ -1429,13 +1451,14 @@ function render(){
   document.getElementById("kNoiPsf").textContent = psf(m.stabNOI)+" stabilised";
   const yoc = m.stabNOI/(m.totalCost||1);
   document.getElementById("kYoc").textContent = pct(yoc,2);
-  const spread = yoc - S.exitCap/100;
+  const spread = yoc - (S.exitMode === "price" ? (m.impliedCap || 0) : S.exitCap/100);
   const spEl = document.getElementById("kSpread");
   spEl.textContent = (spread>=0?"+":"") + Math.round(spread*10000) + " bps vs exit cap";
   spEl.className = "d " + (spread >= 0 ? "pos" : "neg");
   document.getElementById("kExit").textContent = moneyC(m.exitValue);
-  document.getElementById("kExitPsf").textContent =
-    `${psf(m.exitValue)} · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`;
+  document.getElementById("kExitPsf").textContent = S.exitMode === "price"
+    ? `${psf(m.exitValue)} · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`
+    : `${psf(m.exitValue)} · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`;
   const d1 = m.years[0].dscr, ds = m.stabDS>0 ? m.stabNOI/m.stabDS : Infinity;
   const dEl = document.getElementById("kDscr");
   dEl.textContent = (isFinite(d1)?d1.toFixed(2):"∞") + " / " + (isFinite(ds)?ds.toFixed(2):"∞");
@@ -1463,7 +1486,9 @@ function render(){
     </tr>`).join("") + `
     <tr class="exit">
       <td>Sale, end Y${m.hold}</td>
-      <td colspan="2">${moneyC(m.exitValue)} @ ${nf(S.exitCap,2)}% cap on ${moneyC(m.forwardNOI)}</td>
+      <td colspan="2">${S.exitMode === "price"
+        ? `${moneyC(m.exitValue)} sale price · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`
+        : `${moneyC(m.exitValue)} @ ${nf(S.exitCap,2)}% cap on ${moneyC(m.forwardNOI)}`}</td>
       <td>−${moneyC(m.endBalance)} loan</td>
       <td class="${m.netProceeds>=0?"pos":"neg"}">${money(m.netProceeds)}</td>
       <td class="${m.netProceeds>=0?"pos":"neg"}">${pct(m.netProceeds/(m.equity||1),0)}</td>
@@ -1489,6 +1514,7 @@ function render(){
   h("opexPct",  moneyC(m.stabNOI)+" NOI");
   h("opexPsf",  moneyC(m.stabNOI)+" NOI");
   h("exitCap",  moneyC(m.exitValue)+" gross");
+  h("exitPrice", `${money(m.exitValue/Math.max(1,S.sqft),0)}/sf · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`);
   h("hold",     m.irr===null?"":pct(m.irr,1)+" IRR");
   h("sqft",     "");
   h("amortYrs", moneyC(m.stabDS)+" a year");
@@ -1525,6 +1551,16 @@ document.getElementById("opexSeg").addEventListener("click", e => {
 document.getElementById("ioSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
   S.io = +b.dataset.io; applyModes(); render();
+});
+document.getElementById("exitSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b || b.dataset.exit === S.exitMode) return;
+  /* switch without jolting the model: carry the exit value you already had */
+  const m = model();
+  if(b.dataset.exit === "price") S.exitPrice = Math.round(m.exitValue);
+  else if(m.forwardNOI > 0 && S.exitPrice > 0)
+    S.exitCap = clamp(F.exitCap, +(m.forwardNOI / S.exitPrice * 100).toFixed(2));
+  S.exitMode = b.dataset.exit;
+  applyModes(); render();
 });
 document.getElementById("capSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;

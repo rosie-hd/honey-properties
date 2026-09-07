@@ -13,8 +13,11 @@ Open `index.html` in any browser — there is no build step and no server.
   interest, less all debt drawn.
 - **Return on that cash, every year of the hold** — as a cash figure and as
   cash-on-cash %, alongside IRR, equity multiple, DSCR and yield on cost.
-- **Exit.** Forward NOI capitalised at an exit cap rate, less sale costs and the
-  outstanding loan balance.
+- **Exit, valued either way.** A building held for its income is worth its forward
+  NOI capitalised at an exit cap rate. Something bought, done up and resold is worth
+  what it sells for, and a cap rate says nothing useful about it — so the exit takes
+  a sale price directly. Whichever you set, the other is shown implied. Sale costs
+  and the outstanding loan balance come off either.
 - **Price per sq ft** for the subject property against a spread of comparable sales,
   filtered by size, distance and recency.
 
