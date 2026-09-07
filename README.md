@@ -21,6 +21,13 @@ Open `index.html` in any browser — there is no build step and no server.
 - **Price per sq ft** for the subject property against a spread of comparable sales,
   filtered by size, distance and recency.
 
+## Buildings or land
+
+Area is held in square feet internally but entered and read back in **sq ft, acres or
+hectares**. Every per-unit figure follows — purchase, all-in cost, revenue, the exit,
+and the comparable-sales spread. Quoting a Cairngorms forestry block at four pence a
+square foot is not a figure anyone would use.
+
 ## Many properties
 
 The page opens on a shelf of every property you have modelled, each card carrying its

@@ -398,6 +398,14 @@ body.on-projects .model-only{display:none !important}
     <div class="rail">
       <section class="blk">
         <h2>Acquisition</h2>
+        <div class="toggle-row">
+          <span>Measured in</span>
+          <div class="seg" id="areaSeg" role="group" aria-label="Area unit">
+            <button data-area="sqft" aria-pressed="true">sq ft</button>
+            <button data-area="acre" aria-pressed="false">acres</button>
+            <button data-area="ha" aria-pressed="false">hectares</button>
+          </div>
+        </div>
         <div id="g-acq"></div>
       </section>
 
@@ -520,7 +528,7 @@ body.on-projects .model-only{display:none !important}
 
 <!-- ============ COMPS ============ -->
 <div class="card" style="margin-top:18px">
-  <h2>Price per sq ft — subject vs comparable sales</h2>
+  <h2 id="compsHeading">Price per sq ft — subject vs comparable sales</h2>
   <div class="banner">
     <b>!</b>
     <div>This dashboard has <b>no live market data feed</b> — the rows below are placeholder examples.
@@ -537,8 +545,8 @@ body.on-projects .model-only{display:none !important}
   <div class="tbl-wrap" style="margin-top:14px">
     <table class="comps-tbl" id="compTable">
       <thead><tr>
-        <th style="width:26%">Address / property</th><th>Sq ft</th><th>Sale price</th>
-        <th>Date</th><th>Miles</th><th>£/sf</th><th>Match</th><th></th>
+        <th style="width:26%">Address / property</th><th id="compAreaTh">Sq ft</th><th>Sale price</th>
+        <th>Date</th><th>Miles</th><th id="compRateTh">Price / unit</th><th>Match</th><th></th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -578,7 +586,7 @@ body.on-projects .model-only{display:none !important}
    1. STATE
    ========================================================================== */
 const DEFAULTS = {
-  name:"Untitled property", link:"", ccy:"$",
+  name:"Untitled property", link:"", ccy:"$", areaUnit:"sqft",
   sqft:      28000,
   purchase:  5000000,
   acqPct:    5,
@@ -626,6 +634,20 @@ const SAMPLE_COMPS = [
   {a:"Fenner Court",         s:28900, p:7150000,  d:"2023-07", m:1.7},
   {a:"77 Draper Row",        s:19800, p:4210000,  d:"2025-06", m:2.8}
 ];
+
+/* Area is held internally in square feet, always. What changes with the unit is
+   how it is entered and read back: an estate is priced per acre, and quoting a
+   Cairngorms forestry block at four pence a square foot is not a figure anyone
+   would use. */
+const AREA_UNITS = {
+  sqft: {short:"sf",   suf:" sq ft", perSqft:1,        min:200,  max:2000000, st:100,  dec:0},
+  acre: {short:"acre", suf:" acres", perSqft:43560,    min:0.05, max:40000,   st:0.25, dec:2},
+  ha:   {short:"ha",   suf:" ha",    perSqft:107639.1, min:0.02, max:16000,   st:0.1,  dec:2}
+};
+const AU = () => AREA_UNITS[S.areaUnit] || AREA_UNITS.sqft;
+function perArea(v, dec){
+  return money(v * AU().perSqft / Math.max(1, S.sqft), dec == null ? 0 : dec) + "/" + AU().short;
+}
 
 const KEY = "honey-properties-v1";        /* the original single-deal store */
 const STORE_KEY = "honey-properties-v2";  /* { projects:[…], activeId } */
@@ -765,7 +787,7 @@ function renderProjects(){
         <div><span>All-in</span><b>${money(m.totalCost/Math.max(1,S.sqft),0)}/sf</b></div>
       </div>
       ${sparkline(m.years.map(r => r.cf))}
-      <footer>${nf(S.sqft,0)} sq ft &middot; ${m.hold}-year hold &middot; edited ${ago(p.updated)}</footer>
+      <footer>${nf(S.sqft/AU().perSqft, AU().dec)}${AU().suf} &middot; ${m.hold}-year hold &middot; edited ${ago(p.updated)}</footer>
     </article>`;
   })).join("");
 
@@ -803,7 +825,7 @@ function route(){
 const C = () => S.ccy;
 const FIELDS = [
   // key, label, min, max, step, prefix, suffix, decimals, group
-  {k:"sqft",     l:"Net internal area",     min:200,   max:200000, st:100,  suf:" sq ft", dec:0, g:"g-acq"},
+  {k:"sqft",     l:"Area",                  min:200,   max:2000000,st:100,  suf:" sq ft", dec:0, g:"g-acq", area:"size"},
   {k:"purchase", l:"Purchase price",        min:100000,max:20000000,st:25000,pre:"ccy",   dec:0, g:"g-acq"},
   {k:"acqPct",   l:"Acquisition costs",     min:0,     max:15,     st:0.25, suf:"%",      dec:2, g:"g-acq"},
 
@@ -817,14 +839,14 @@ const FIELDS = [
   {k:"rateFit",  l:"Fit-out debt rate",     min:0,     max:20,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
   {k:"amortYrs", l:"Amortisation period",   min:5,     max:40,     st:1,    suf:" years", dec:0, g:"g-debt2"},
 
-  {k:"rentPsf",  l:"Stabilised revenue",    min:0,     max:400,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-inc"},
+  {k:"rentPsf",  l:"Stabilised revenue",    min:0,     max:400,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-inc", area:"rate"},
   {k:"revTotal", l:"Stabilised revenue",    min:0,     max:20000000,st:10000,pre:"ccy",  dec:0, g:"g-inc"},
   {k:"revGrowth",l:"Revenue growth p.a.",   min:-5,    max:12,     st:0.25, suf:"%",      dec:2, g:"g-inc"},
   {k:"vacancy",  l:"Vacancy / credit loss", min:0,     max:40,     st:0.5,  suf:"%",      dec:1, g:"g-inc"},
   {k:"leaseUp",  l:"Lease-up to stabilised",min:0,     max:48,     st:1,    suf:" months",dec:0, g:"g-inc"},
 
   {k:"opexPct",  l:"Operating costs",       min:0,     max:80,     st:0.5,  suf:"% of revenue", dec:1, g:"g-opex"},
-  {k:"opexPsf",  l:"Operating costs",       min:0,     max:120,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-opex"},
+  {k:"opexPsf",  l:"Operating costs",       min:0,     max:120,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-opex", area:"rate"},
 
   {k:"hold",     l:"Hold period",           min:1,     max:25,     st:1,    suf:" years", dec:0, g:"g-exit"},
   {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit2"},
@@ -979,9 +1001,9 @@ function fieldHTML(f){
       ${pre ? `<span class="aff pre">${pre}</span>` : ""}
       <input class="num" id="in-${f.k}" type="text" inputmode="decimal" autocomplete="off" spellcheck="false"
              role="spinbutton" aria-valuemin="${f.min}" aria-valuemax="${f.max}">
-      ${f.suf ? `<span class="aff">${f.suf}</span>` : ""}
+      ${f.suf ? `<span class="aff suf">${f.suf}</span>` : ""}
     </div>
-    <input type="range" class="rng" min="${f.min}" max="${f.max}" step="${f.st}" aria-label="${f.l}">
+    <input type="range" class="rng" min="${lim(f).min}" max="${lim(f).max}" step="${lim(f).st}" aria-label="${f.l}">
   </div>`;
 }
 
@@ -995,25 +1017,44 @@ function buildFields(){
   FIELDS.forEach(wireField);
 }
 
-function clamp(f,v){ return Math.min(f.max, Math.max(f.min, v)); }
-function setVal(k, v, skipRender){
-  const f = F[k];
-  const dec = f.dec;
+/* A field's limits and its step live in whatever unit it is being shown in;
+   its stored value never leaves square feet. */
+function lim(f, unit){
+  const u = AREA_UNITS[unit || S.areaUnit] || AREA_UNITS.sqft;
+  if(f.area === "size") return {min:u.min, max:u.max, st:u.st, dec:u.dec, suf:u.suf};
+  if(f.area === "rate") return {min:f.min*u.perSqft, max:f.max*u.perSqft, st:f.st*u.perSqft,
+                                dec: u.perSqft > 1 ? 0 : f.dec, suf:" / " + u.short};
+  return {min:f.min, max:f.max, st:f.st, dec:f.dec, suf:f.suf || ""};
+}
+function areaScale(f, unit){
+  const k = (AREA_UNITS[unit || S.areaUnit] || AREA_UNITS.sqft).perSqft;
+  return f.area === "size" ? 1/k : f.area === "rate" ? k : 1;
+}
+const toDisp  = (f,v) => v * areaScale(f);
+const toStore = (f,v) => v / areaScale(f);
+function setSqft(sqftValue){ setVal("sqft", toDisp(F.sqft, sqftValue)); }
+
+function clamp(f,v,unit){ const L = lim(f,unit); return Math.min(L.max, Math.max(L.min, v)); }
+function setVal(k, v, skipRender){          /* v arrives in the displayed unit */
+  const f = F[k], L = lim(f);
   v = clamp(f, v);
-  v = Math.round(v * Math.pow(10,dec+2)) / Math.pow(10,dec+2);
-  S[k] = v;
+  v = Math.round(v * Math.pow(10, L.dec+2)) / Math.pow(10, L.dec+2);
+  S[k] = toStore(f, v);
   syncField(k);
   if(!skipRender) render();
 }
 function syncField(k){
   const f = F[k], node = document.querySelector(`.field[data-k="${k}"]`);
   if(!node) return;
+  const L = lim(f), d = toDisp(f, S[k]);
   const inp = node.querySelector("input.num"), rng = node.querySelector("input[type=range]");
-  if(document.activeElement !== inp) inp.value = nf(S[k], f.dec);
-  inp.setAttribute("aria-valuenow", S[k]);
-  rng.value = S[k];
+  if(document.activeElement !== inp) inp.value = nf(d, L.dec);
+  inp.setAttribute("aria-valuenow", d);
+  rng.min = L.min; rng.max = L.max; rng.step = L.st; rng.value = d;
   const pre = node.querySelector(".aff.pre");
   if(pre && f.pre === "ccy") pre.textContent = C();
+  const suf = node.querySelector(".aff.suf");
+  if(suf) suf.textContent = L.suf;
 }
 
 function wireField(f){
@@ -1023,18 +1064,19 @@ function wireField(f){
   const rng = node.querySelector("input[type=range]");
   const lab = node.querySelector("label");
 
+  const step = () => lim(f).st;
   rng.addEventListener("input", () => setVal(f.k, parseFloat(rng.value)));
 
   // typing
-  inp.addEventListener("focus", () => { inp.value = String(S[f.k]); inp.select(); });
+  inp.addEventListener("focus", () => { inp.value = String(toDisp(f, S[f.k])); inp.select(); });
   inp.addEventListener("blur",  () => { commit(); syncField(f.k); });
   inp.addEventListener("keydown", e => {
     if(e.key === "Enter"){ commit(); inp.blur(); }
     else if(e.key === "ArrowUp" || e.key === "ArrowDown"){
       e.preventDefault();
       const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-      setVal(f.k, S[f.k] + f.st*mult*(e.key==="ArrowUp"?1:-1));
-      inp.value = String(S[f.k]);
+      setVal(f.k, toDisp(f, S[f.k]) + step()*mult*(e.key==="ArrowUp"?1:-1));
+      inp.value = String(toDisp(f, S[f.k]));
     }
   });
   function commit(){
@@ -1047,8 +1089,8 @@ function wireField(f){
   const onWheel = e => {
     e.preventDefault();
     const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-    setVal(f.k, S[f.k] - Math.sign(e.deltaY) * f.st * mult);
-    if(document.activeElement === inp) inp.value = String(S[f.k]);
+    setVal(f.k, toDisp(f, S[f.k]) - Math.sign(e.deltaY) * step() * mult);
+    if(document.activeElement === inp) inp.value = String(toDisp(f, S[f.k]));
   };
   inp.addEventListener("wheel", onWheel, {passive:false});
   lab.addEventListener("wheel", onWheel, {passive:false});
@@ -1057,7 +1099,7 @@ function wireField(f){
   [inp, lab].forEach(handle => {
     handle.addEventListener("pointerdown", e => {
       if(e.button !== 0) return;
-      const startX = e.clientX, startV = S[f.k];
+      const startX = e.clientX, startV = toDisp(f, S[f.k]);
       let moved = false;
       const isInput = handle === inp;
       const move = ev => {
@@ -1065,7 +1107,7 @@ function wireField(f){
         if(!moved && Math.abs(dx) < 3) return;
         if(!moved){ moved = true; document.body.classList.add("dragging"); handle.setPointerCapture(e.pointerId); }
         const mult = ev.shiftKey ? 10 : (ev.altKey ? 0.1 : 1);
-        setVal(f.k, startV + Math.round(dx/3) * f.st * mult);
+        setVal(f.k, startV + Math.round(dx/3) * step() * mult);
       };
       const up = () => {
         window.removeEventListener("pointermove", move);
@@ -1099,6 +1141,7 @@ function applyModes(){
   segSet("ioSeg","io", String(S.io));
   segSet("capSeg","cap", String(S.capInt));
   segSet("exitSeg","exit", S.exitMode);
+  segSet("areaSeg","area", S.areaUnit);
   segSet("ccySeg","ccy", S.ccy);
 }
 function segSet(id, attr, val){
@@ -1312,8 +1355,8 @@ function drawCompChart(rows, subj){
     c.style.cursor = "pointer";
     c.addEventListener("mousemove", e => showTip(e,
       `<b>${r.a || "Untitled comp"}</b>
-       <div><em>${C()}${nf(r.ppsf,0)}</em> per sq ft</div>
-       <div>${nf(r.s,0)} sq ft · ${money(r.p)}</div>
+       <div><em>${C()}${nf(r.ppsf,0)}</em> per ${AU().short}</div>
+       <div>${nf(r.s/AU().perSqft, AU().dec)}${AU().suf} · ${money(r.p)}</div>
        <div>${r.d || "—"} · ${nf(r.m,1)} miles away</div>`));
     c.addEventListener("mouseleave", hideTip);
   });
@@ -1325,7 +1368,7 @@ function drawCompChart(rows, subj){
   const anchor = sx > W-150 ? "end" : "start";
   el("text",{x: sx + (anchor==="end"?-9:9), y:pad.t-13, "text-anchor":anchor, fill:"var(--ink)",
              "font-size":12,"font-weight":640},svg)
-    .textContent = `This property ${C()}${nf(subj,0)}/sf`;
+    .textContent = `This property ${C()}${nf(subj,0)}/${AU().short}`;
 
   ["Low "+C()+nf(vals[0],0), "Median "+C()+nf(md,0), "High "+C()+nf(vals[vals.length-1],0)]
     .forEach((t,i) => {
@@ -1340,7 +1383,9 @@ function drawCompChart(rows, subj){
 function compRows(){
   return COMPS.map(c => {
     const s = +c.s || 0, p = +c.p || 0;
-    return Object.assign({}, c, {s, p, m:+c.m||0, ppsf: s>0 ? p/s : 0, yrs: ageYears(c.d)});
+    return Object.assign({}, c, {s, p, m:+c.m||0,
+      ppsf: s>0 ? p/s * AU().perSqft : 0,   /* price per displayed unit */
+      yrs: ageYears(c.d)});
   });
 }
 function ageYears(d){
@@ -1360,7 +1405,7 @@ function matches(r){
 function renderComps(m){
   const all = compRows();
   const hits = all.filter(matches).sort((a,b) => a.ppsf - b.ppsf);
-  const subj = S.purchase / Math.max(1, S.sqft);
+  const subj = S.purchase / Math.max(1, S.sqft) * AU().perSqft;
 
   // table
   const tb = document.querySelector("#compTable tbody");
@@ -1368,7 +1413,7 @@ function renderComps(m){
     const on = matches(r);
     return `<tr class="${on?"":"out"}" data-i="${i}">
       <td><input class="txt" data-f="a" value="${(r.a||"").replace(/"/g,"&quot;")}" placeholder="Address"></td>
-      <td><input data-f="s" value="${r.s||""}"></td>
+      <td><input data-f="s" data-area="1" value="${r.s ? +(r.s/AU().perSqft).toFixed(AU().dec) : ""}"></td>
       <td><input data-f="p" value="${r.p||""}"></td>
       <td><input data-f="d" value="${r.d||""}" placeholder="YYYY-MM" style="text-align:right"></td>
       <td><input data-f="m" value="${r.m||""}"></td>
@@ -1380,13 +1425,18 @@ function renderComps(m){
   tb.querySelectorAll("input").forEach(inp => {
     inp.addEventListener("change", e => {
       const i = +e.target.closest("tr").dataset.i, f = e.target.dataset.f;
-      COMPS[i][f] = (f === "a" || f === "d") ? e.target.value : (parseFloat(e.target.value.replace(/[^0-9.\-]/g,"")) || 0);
+      let v = (f === "a" || f === "d") ? e.target.value : (parseFloat(e.target.value.replace(/[^0-9.\-]/g,"")) || 0);
+      if(e.target.dataset.area) v = v * AU().perSqft;   /* comps are stored in sq ft */
+      COMPS[i][f] = v;
       save(); render();
     });
   });
   tb.querySelectorAll(".del").forEach(b => b.addEventListener("click", e => {
     COMPS.splice(+e.target.closest("tr").dataset.i, 1); save(); render();
   }));
+
+  document.getElementById("compAreaTh").textContent = AU().suf.trim();
+  document.getElementById("compRateTh").textContent = C() + "/" + AU().short;
 
   // stats
   const vals = hits.map(r => r.ppsf).sort((a,b)=>a-b);
@@ -1396,11 +1446,11 @@ function renderComps(m){
   const mean = vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
   const below = vals.filter(v => v < subj).length;
   const pctile = vals.length ? below/vals.length : 0;
-  const allIn = m.totalCost / Math.max(1,S.sqft);
+  const allIn = m.totalCost / Math.max(1,S.sqft) * AU().perSqft;
 
   document.getElementById("compStats").innerHTML = [
-    ["Your purchase", C()+nf(subj,0)+"/sf"],
-    ["Your all-in cost", C()+nf(allIn,0)+"/sf"],
+    ["Your purchase", C()+nf(subj,0)+"/"+AU().short],
+    ["Your all-in cost", C()+nf(allIn,0)+"/"+AU().short],
     ["Comps in set", nf(hits.length,0)+" of "+nf(all.length,0)],
     ["Low", vals.length?C()+nf(vals[0],0):"—"],
     ["25th pct", vals.length?C()+nf(q(0.25),0):"—"],
@@ -1412,6 +1462,8 @@ function renderComps(m){
     ["vs median", vals.length? (subj>=q(0.5)?"+":"")+Math.round((subj/q(0.5)-1)*100)+"%" : "—"]
   ].map(([l,v]) => `<div><div class="l">${l}</div><div class="v">${v}</div></div>`).join("");
 
+  document.getElementById("compsHeading").textContent =
+    `Price per ${AU().short === "sf" ? "sq ft" : AU().short} — subject vs comparable sales`;
   drawCompChart(hits, subj);
 }
 
@@ -1427,7 +1479,7 @@ function render(){
   document.getElementById("heroNote").textContent =
     `${moneyC(m.totalCost)} total cost less ${moneyC(m.totalDebt)} of debt · ` +
     `${pct(m.totalDebt/(m.totalCost||1),0)} loan to cost · ` +
-    `${money(m.equity/Math.max(1,S.sqft),0)}/sf of your own money`;
+    `${perArea(m.equity)} of your own money`;
 
   const irrEl = document.getElementById("kIrr");
   irrEl.textContent = m.irr === null ? "n/a" : pct(m.irr,1);
@@ -1440,7 +1492,7 @@ function render(){
   cocEl.className = "v2 " + (m.avgCoc >= 0 ? "pos" : "neg");
 
   // ---- tiles ----
-  const psf = v => money(v/Math.max(1,S.sqft), 0)+"/sf";
+  const psf = v => perArea(v);
   document.getElementById("kCost").textContent = moneyC(m.totalCost);
   document.getElementById("kCostPsf").textContent =
     `${psf(m.totalCost)} all-in · ${psf(S.purchase)} bricks · ${psf(m.fitTotal)} fit-out`;
@@ -1475,7 +1527,7 @@ function render(){
   const maxAbs = Math.max(...m.years.map(r => Math.abs(r.cf)), 1);
   tb.innerHTML = m.years.map(r => `
     <tr>
-      <td>Year ${r.y}${r.ramp < 0.999 ? ` <span class="pill">${Math.round(r.ramp*100)}% let</span>` : ""}</td>
+      <td>Year ${r.y}${r.ramp < 0.999 && m.baseRev > 0 ? ` <span class="pill">${Math.round(r.ramp*100)}% let</span>` : ""}</td>
       <td>${money(r.eff)}</td>
       <td>${money(r.noi)}</td>
       <td>${money(r.ds)}</td>
@@ -1502,19 +1554,19 @@ function render(){
 
   // hints under labels
   const h = (k,v) => { const n = document.getElementById("hint-"+k); if(n) n.textContent = v; };
-  h("purchase", money(S.purchase/Math.max(1,S.sqft),0)+"/sf");
-  h("fitOut",   money(m.fitTotal/Math.max(1,S.sqft),0)+"/sf incl. contingency");
+  h("purchase", perArea(S.purchase));
+  h("fitOut",   perArea(m.fitTotal)+" incl. contingency");
   h("ltvProp",  moneyC(m.debtProp)+" borrowed");
   h("ltcFit",   moneyC(m.debtFit)+" borrowed");
   h("acqPct",   moneyC(m.acqCosts));
   h("contPct",  moneyC(m.fitTotal - S.fitOut));
   h("buildMon", S.capInt ? moneyC(m.cpInt)+" interest in cash" : "interest ignored");
   h("rentPsf",  moneyC(m.baseRev)+" a year");
-  h("revTotal", money(m.baseRev/Math.max(1,S.sqft),2)+"/sf");
+  h("revTotal", perArea(m.baseRev, 2));
   h("opexPct",  moneyC(m.stabNOI)+" NOI");
   h("opexPsf",  moneyC(m.stabNOI)+" NOI");
   h("exitCap",  moneyC(m.exitValue)+" gross");
-  h("exitPrice", `${money(m.exitValue/Math.max(1,S.sqft),0)}/sf · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`);
+  h("exitPrice", `${perArea(m.exitValue)} · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`);
   h("hold",     m.irr===null?"":pct(m.irr,1)+" IRR");
   h("sqft",     "");
   h("amortYrs", moneyC(m.stabDS)+" a year");
@@ -1551,6 +1603,11 @@ document.getElementById("opexSeg").addEventListener("click", e => {
 document.getElementById("ioSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
   S.io = +b.dataset.io; applyModes(); render();
+});
+document.getElementById("areaSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b || b.dataset.area === S.areaUnit) return;
+  S.areaUnit = b.dataset.area;          /* stored area never moves — only its unit */
+  applyModes(); render();
 });
 document.getElementById("exitSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b || b.dataset.exit === S.exitMode) return;
@@ -1609,7 +1666,7 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 document.getElementById("copyBtn").addEventListener("click", async () => {
   const m = model();
   const lines = [
-    `${S.name} — ${nf(S.sqft,0)} sq ft`,
+    `${S.name} — ${nf(S.sqft/AU().perSqft, AU().dec)}${AU().suf}`,
     S.link ? `Listing: ${S.link}` : null,
     `Purchase ${money(S.purchase)} (${money(S.purchase/S.sqft,0)}/sf) + fit-out ${money(m.fitTotal)} (${money(m.fitTotal/S.sqft,0)}/sf)`,
     `Total cost ${money(m.totalCost)} · debt ${money(m.totalDebt)} · CASH IN ${money(m.equity)}`,
@@ -1899,7 +1956,7 @@ function applyFact(key){
     if(f.value > F.purchase.max)
       status(`The price ${f.ccy}${nf(f.value,0)} is above this model's ceiling, so it went in at ${C()}${nf(F.purchase.max,0)}.`, false, true);
   }
-  else if(key === "area")    setVal("sqft", f.value);
+  else if(key === "area")    setSqft(f.value);   /* the reader always yields sq ft */
   else if(key === "address"){ S.name = f.value; document.getElementById("propName").value = f.value; save(); }
   else if(key === "url"){     S.link = f.value; linkInput.value = f.value; syncLink(); save(); }
 }
@@ -2002,6 +2059,12 @@ document.getElementById("listingText").addEventListener("paste", e => {
    rather than a list of figures to retype. What arrived that way is named on
    the page, because a number you did not type is one you should get to check.
    ========================================================================== */
+const MODE_PARAMS = {
+  areaUnit: ["sqft","acre","ha"],
+  exitMode: ["cap","price"],
+  revMode:  ["psf","total"],
+  opexMode: ["pct","psf"]
+};
 function parseQueryParams(){
   const q = new URLSearchParams(location.search);
   const seed = {}, named = [];
@@ -2011,13 +2074,26 @@ function parseQueryParams(){
   const ccy = q.get("ccy");
   if(ccy && ["£","$","€"].includes(ccy)) seed.ccy = ccy;
 
+  /* modes are read first: how the area is measured decides what the area
+     figure is allowed to be */
+  Object.keys(MODE_PARAMS).forEach(k => {
+    const v = q.get(k);
+    if(v && MODE_PARAMS[k].includes(v)) seed[k] = v;
+  });
+  ["io","capInt"].forEach(k => { if(q.has(k)) seed[k] = q.get(k) === "0" ? 0 : 1; });
+  const unit = seed.areaUnit || DEFAULTS.areaUnit;
+
   FIELDS.forEach(f => {
     if(!q.has(f.k)) return;
     const v = parseFloat(q.get(f.k).replace(/[^0-9.\-]/g,""));
     if(!isFinite(v)) return;
-    const clamped = clamp(f, v);
-    seed[f.k] = clamped;
-    named.push(f.l.toLowerCase() + (clamped !== v ? " (capped at this model's limit)" : ""));
+    /* an area in the query is always square feet, whatever it will be shown in */
+    const disp = f.area === "size" ? v / AREA_UNITS[unit].perSqft : v;
+    const clamped = clamp(f, disp, unit);
+    seed[f.k] = f.area === "size" ? clamped * AREA_UNITS[unit].perSqft
+              : f.area === "rate" ? clamped / AREA_UNITS[unit].perSqft
+              : clamped;
+    named.push(f.l.toLowerCase() + (Math.abs(clamped - disp) > 1e-9 ? " (capped at this model's limit)" : ""));
   });
 
   return {seed, named};
