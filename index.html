@@ -6,6 +6,7 @@
 <title>Honey Properties</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=DM+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
 <style>
 :root{
@@ -238,6 +239,46 @@ details.imp summary{cursor:pointer;font-size:12.5px;color:var(--ink-2);padding:4
 details.imp summary:hover{color:var(--ink)}
 .foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
+
+/* ---------- reading a listing ---------- */
+.ingest{background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px;margin-bottom:18px}
+.ingest-head{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1.1fr);gap:14px;align-items:stretch}
+@media (max-width:820px){.ingest-head{grid-template-columns:1fr}.ingest .or{display:none}}
+.drop{
+  border:1.5px dashed var(--axis);border-radius:9px;padding:12px 14px;cursor:pointer;
+  display:flex;flex-direction:column;justify-content:center;gap:2px;transition:border-color .12s,background .12s;
+}
+.drop:hover,.drop:focus-visible{border-color:var(--honey);background:var(--surface-2)}
+.drop.over{border-color:var(--honey);background:color-mix(in srgb,var(--honey) 12%,var(--surface));border-style:solid}
+.drop b{font-size:13px;font-weight:600}
+.drop span{font-size:11.5px;color:var(--muted)}
+.drop u{text-decoration-color:var(--honey);text-underline-offset:2px}
+.ingest .or{display:flex;align-items:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pastewrap{display:flex;flex-direction:column;gap:6px}
+.pastewrap textarea{
+  flex:1;min-height:56px;resize:vertical;background:var(--surface-2);border:1px solid transparent;
+  border-radius:9px;color:var(--ink);font-family:var(--body);font-size:12px;padding:9px 10px;
+}
+.pastewrap textarea:focus{outline:none;border-color:var(--honey);background:var(--surface)}
+.pastewrap .btnrow{display:flex;gap:8px;align-items:center}
+.ingest-status{margin-top:12px;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:9px}
+.ingest-status.err{color:var(--crit)}
+.spin{width:13px;height:13px;border:2px solid var(--grid);border-top-color:var(--honey);border-radius:50%;
+  animation:sp .7s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+.found{margin-top:13px;border-top:1px solid var(--hair);padding-top:12px}
+.found h3{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+.found ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.found li{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:12px;align-items:center}
+.found .fl{font-size:12px;color:var(--ink-2)}
+.found .fv{font-family:var(--display);font-size:16px;font-weight:600}
+.found .fs{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:block;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.found .miss{font-size:12.5px;color:var(--muted);font-style:italic}
+.found-foot{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.found-foot .note{font-size:11.5px;color:var(--muted)}
+.applied{color:var(--good-text);font-size:12px;font-weight:600}
 </style>
 </head>
 <body>
@@ -264,6 +305,27 @@ details.imp summary:hover{color:var(--ink)}
   <button class="btn" id="copyBtn">Copy summary</button>
   <button class="btn" id="resetBtn">Reset</button>
 </header>
+
+<section class="ingest" id="ingest">
+  <div class="ingest-head">
+    <div class="drop" id="dropZone" tabindex="0" role="button" aria-label="Choose a brochure or listing PDF to read">
+      <b>Read a listing</b>
+      <span>Drop a brochure or a printed listing PDF here, or <u>choose a file</u></span>
+    </div>
+    <div class="or">or</div>
+    <div class="pastewrap">
+      <textarea id="listingText" spellcheck="false"
+        placeholder="Paste the listing text here — on Rightmove or LoopNet, select all on the page, copy, paste. This is the most reliable route."></textarea>
+      <div class="btnrow">
+        <button class="btn primary" id="readTextBtn">Read the text</button>
+        <span class="note" style="font-size:11.5px;color:var(--muted)">Nothing is uploaded — the file is read inside your browser.</span>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" accept="application/pdf,.pdf,image/*" hidden>
+  <div id="ingestStatus" class="ingest-status" hidden></div>
+  <div id="ingestResult" class="found" hidden></div>
+</section>
 
 <div class="grid">
 
@@ -1372,6 +1434,249 @@ document.getElementById("importBtn").addEventListener("click", () => doImport(fa
 document.getElementById("appendBtn").addEventListener("click", () => doImport(true));
 
 let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 120); });
+
+/* ==========================================================================
+   10. READING A LISTING
+   A brochure or a printed listing page carries the two numbers this model
+   really needs — the asking price and the floor area. Pull them out of the
+   text, show the sentence each one came from, and let the figure be accepted
+   or ignored. Nothing is applied without a click; nothing leaves the browser.
+   ========================================================================== */
+const PDF_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const OCR_SRC    = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/7.0.0/tesseract.min.js";
+
+const MONEY_RE = /([£$€])\s*(\d[\d,.\s]*\d|\d)\s*(million|billion|mn|bn|m|k)?\b/gi;
+const AREA_RE  = /(\d[\d,.\s]*\d|\d)\s*(sq\.?\s?ft|sqft|ft²|ft2|square\s+feet|sq\.?\s?m|sqm|m²|m2|square\s+met(?:re|er)s?|sf)\b/gi;
+const URL_RE   = /https?:\/\/[^\s"'<>)]+/i;
+
+/* money that is plainly not a purchase price */
+const NOT_PRICE = /(per\s+(annum|month|week|calendar|sq|square)|p\.a\.|pcm|pw\b|rent|service\s+charge|deposit|business\s+rates|epc|insurance|per\s+sq|psf|\/\s*sq|stamp\s+duty|fee)/i;
+/* wording that marks the number as the asking price */
+const IS_PRICE  = /(guide\s+price|asking\s+price|offers\s+(in\s+excess|over|around|invited)|oieo|oiro|for\s+sale|purchase\s+price|price[:\s])/i;
+/* wording that marks an area as the one to underwrite */
+const AREA_NIA  = /(nia\b|net\s+internal)/i;
+const AREA_TOT  = /(gia\b|gross\s+internal|total|floor\s+area|extending\s+to|approx|size)/i;
+
+const MULT = {k:1e3, m:1e6, mn:1e6, million:1e6, bn:1e9, billion:1e9};
+
+function num(str){ return parseFloat(String(str).replace(/[,\s]/g,"")); }
+function around(text, i, len){
+  return text.slice(Math.max(0,i-70), i+len+70).replace(/\s+/g," ").trim();
+}
+/* Listings are line-oriented: "Rent passing £1,150,000 per annum" disqualifies
+   itself on its own line, while "Guide price £4,250,000" three lines above must
+   not be disqualified by it. Judge each number on its own line — and allow a
+   label to sit on the line above the figure it names, as brochures often set it. */
+function lineAt(text, i){
+  const a = text.lastIndexOf("\n", i) + 1;
+  let b = text.indexOf("\n", i);
+  if(b < 0) b = text.length;
+  return text.slice(a, b).replace(/\s+/g," ").trim();
+}
+function lineAndAbove(text, i){
+  const a = text.lastIndexOf("\n", i) + 1;
+  const prev = a > 1 ? text.slice(text.lastIndexOf("\n", a-2) + 1, a) : "";
+  return (prev + " " + lineAt(text, i)).replace(/\s+/g," ").trim();
+}
+
+function parseListing(text){
+  const facts = {};
+
+  /* ---- price ---- */
+  const prices = [];
+  for(const m of text.matchAll(MONEY_RE)){
+    let v = num(m[2]);
+    if(!isFinite(v)) continue;
+    const suffix = (m[3]||"").toLowerCase();
+    if(MULT[suffix]) v *= MULT[suffix];
+    if(v < 10000 || v > 5e9) continue;
+    if(NOT_PRICE.test(lineAt(text, m.index))) continue;
+    prices.push({value:v, ccy:m[1], snippet:around(text, m.index, m[0].length),
+                 score: IS_PRICE.test(lineAndAbove(text, m.index)) ? 3 : 0});
+  }
+  prices.sort((a,b) => b.score - a.score || b.value - a.value);
+  if(prices.length) facts.price = prices[0];
+
+  /* ---- floor area ---- */
+  const areas = [];
+  for(const m of text.matchAll(AREA_RE)){
+    let v = num(m[1]);
+    if(!isFinite(v)) continue;
+    const unit = m[2].toLowerCase().replace(/[.\s]/g,"");
+    const metric = /^(sqm|m²|m2|squaremet)/.test(unit);
+    const sqft = metric ? v * 10.7639 : v;
+    if(sqft < 100 || sqft > 2e6) continue;
+    const lbl = lineAndAbove(text, m.index);
+    areas.push({value:Math.round(sqft), metric, raw:v, snippet:around(text, m.index, m[0].length),
+                score: AREA_NIA.test(lbl) ? 3 : AREA_TOT.test(lbl) ? 2 : 0});
+  }
+  areas.sort((a,b) => b.score - a.score || b.value - a.value);
+  if(areas.length) facts.area = areas[0];
+
+  /* ---- the listing's own address line and url ---- */
+  const firstLine = text.split(/\r?\n/).map(l => l.trim())
+    .find(l => l.length > 5 && l.length < 90 && /[a-z]/i.test(l) && !/^(page|www\.|https?:)/i.test(l));
+  if(firstLine) facts.address = {value:firstLine, snippet:firstLine};
+  const url = text.match(URL_RE);
+  if(url) facts.url = {value:url[0], snippet:url[0]};
+
+  return facts;
+}
+
+/* ---------- status ---------- */
+const stEl = document.getElementById("ingestStatus");
+const resEl = document.getElementById("ingestResult");
+function status(msg, spinning, isErr){
+  stEl.hidden = !msg;
+  stEl.className = "ingest-status" + (isErr ? " err" : "");
+  stEl.innerHTML = msg ? (spinning ? '<span class="spin"></span>' : "") + "<span></span>" : "";
+  if(msg) stEl.querySelector("span:last-child").textContent = msg;
+}
+
+/* ---------- readers ---------- */
+async function textFromPdf(file){
+  if(!window.pdfjsLib) throw new Error("The PDF reader could not load — check your connection, or paste the listing text instead.");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER;
+  const doc = await pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
+  let out = "";
+  for(let i=1; i<=doc.numPages; i++){
+    status(`Reading page ${i} of ${doc.numPages}…`, true);
+    const items = (await (await doc.getPage(i)).getTextContent()).items;
+    /* A PDF has no lines, only positioned runs. Bucket them by baseline so the
+       page comes back as the rows a reader sees — the schedule of areas in a
+       brochure is a table, and its labels only mean anything row by row. */
+    const rows = new Map();
+    items.forEach(it => {
+      if(!it.str.trim()) return;
+      const key = Math.round(it.transform[5] / 3);
+      if(!rows.has(key)) rows.set(key, []);
+      rows.get(key).push(it);
+    });
+    out += [...rows.entries()].sort((a,b) => b[0] - a[0])
+      .map(([, its]) => its.sort((a,b) => a.transform[4] - b.transform[4])
+        .map(it => it.str).join(" ").replace(/\s+/g," ").trim())
+      .filter(Boolean).join("\n") + "\n";
+  }
+  return out;
+}
+
+async function textFromImage(file){
+  status("Loading the image reader — this part is a big download the first time…", true);
+  if(!window.Tesseract){
+    await new Promise((res, rej) => {
+      const sc = document.createElement("script");
+      sc.src = OCR_SRC; sc.onload = res;
+      sc.onerror = () => rej(new Error("Reading images isn't available on this copy of the page. Open the full version, or paste the listing text instead."));
+      document.head.appendChild(sc);
+    });
+  }
+  const r = await Tesseract.recognize(file, "eng", {
+    logger: p => { if(p.status === "recognizing text") status(`Reading the image — ${Math.round(p.progress*100)}%…`, true); }
+  });
+  return r.data.text;
+}
+
+/* ---------- the found panel ---------- */
+let FOUND = {};
+function showFound(facts, sourceLabel){
+  FOUND = facts;
+  const rows = [];
+  const add = (key, label, display) => {
+    if(!facts[key]) return;
+    rows.push(`<li>
+      <span class="fl">${label}</span>
+      <span><span class="fv">${display}</span><span class="fs" title="${facts[key].snippet.replace(/"/g,"&quot;")}">…${facts[key].snippet}…</span></span>
+      <button class="btn" data-apply="${key}">Use it</button>
+    </li>`);
+  };
+  add("price",   "Asking price",      facts.price ? facts.price.ccy + nf(facts.price.value,0) : "");
+  add("area",    "Floor area",        facts.area  ? nf(facts.area.value,0) + " sq ft" + (facts.area.metric ? ` (${nf(facts.area.raw,1)} sq m converted)` : "") : "");
+  add("address", "Property name",     facts.address ? facts.address.value : "");
+  add("url",     "Listing link",      facts.url ? facts.url.value : "");
+
+  resEl.hidden = false;
+  resEl.innerHTML = rows.length
+    ? `<h3>Found in ${sourceLabel}</h3><ul>${rows.join("")}</ul>
+       <div class="found-foot">
+         <button class="btn primary" id="applyAll">Use all of these</button>
+         <button class="btn" id="dismissFound">Discard</button>
+         <span class="note">Check each figure against the listing before you rely on it — a brochure can label things in ways this misreads.</span>
+       </div>`
+    : `<h3>Found in ${sourceLabel}</h3>
+       <p class="miss">No price or floor area turned up. If it was a scan or a photo the text isn't selectable — paste the listing text instead, or type the two figures in by hand.</p>`;
+
+  resEl.querySelectorAll("[data-apply]").forEach(b =>
+    b.addEventListener("click", () => { applyFact(b.dataset.apply); b.outerHTML = '<span class="applied">Applied</span>'; }));
+  const all = document.getElementById("applyAll");
+  if(all) all.addEventListener("click", () => {
+    ["price","area","address","url"].forEach(applyFact);
+    resEl.querySelectorAll("[data-apply]").forEach(b => b.outerHTML = '<span class="applied">Applied</span>');
+    all.textContent = "Applied";
+  });
+  const dis = document.getElementById("dismissFound");
+  if(dis) dis.addEventListener("click", () => { resEl.hidden = true; status(""); });
+}
+
+function applyFact(key){
+  const f = FOUND[key];
+  if(!f) return;
+  if(key === "price"){
+    if(f.ccy && f.ccy !== S.ccy) setCcy(f.ccy);
+    setVal("purchase", f.value);
+    if(f.value > F.purchase.max)
+      status(`The price ${f.ccy}${nf(f.value,0)} is above this model's ceiling, so it went in at ${C()}${nf(F.purchase.max,0)}.`, false, true);
+  }
+  else if(key === "area")    setVal("sqft", f.value);
+  else if(key === "address"){ S.name = f.value; document.getElementById("propName").value = f.value; save(); }
+  else if(key === "url"){     S.link = f.value; linkInput.value = f.value; syncLink(); save(); }
+}
+
+/* ---------- entry points ---------- */
+async function ingestFile(file){
+  if(!file) return;
+  resEl.hidden = true;
+  try{
+    let text, label;
+    if(/pdf$/i.test(file.type) || /\.pdf$/i.test(file.name)){
+      text = await textFromPdf(file); label = file.name;
+      if(text.replace(/\s/g,"").length < 40)
+        throw new Error("That PDF has no selectable text — it's a scan or an export of images. Paste the listing text instead, or drop a screenshot to read it as an image.");
+    } else if(/^image\//.test(file.type)){
+      text = await textFromImage(file); label = file.name + " (read as an image)";
+    } else {
+      throw new Error("That file type can't be read here — a PDF, a screenshot, or pasted text.");
+    }
+    status("");
+    showFound(parseListing(text), label);
+  }catch(err){
+    status(err.message || String(err), false, true);
+  }
+}
+
+const dropZone = document.getElementById("dropZone");
+const fileInput = document.getElementById("fileInput");
+dropZone.addEventListener("click", () => fileInput.click());
+dropZone.addEventListener("keydown", e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); fileInput.click(); } });
+fileInput.addEventListener("change", e => { ingestFile(e.target.files[0]); e.target.value = ""; });
+
+["dragenter","dragover"].forEach(ev => dropZone.addEventListener(ev, e => {
+  e.preventDefault(); dropZone.classList.add("over");
+}));
+["dragleave","drop"].forEach(ev => dropZone.addEventListener(ev, e => {
+  e.preventDefault(); dropZone.classList.remove("over");
+}));
+dropZone.addEventListener("drop", e => ingestFile(e.dataTransfer.files[0]));
+/* a file dropped anywhere else must not navigate the page away from the model */
+["dragover","drop"].forEach(ev => window.addEventListener(ev, e => {
+  if(!dropZone.contains(e.target)) e.preventDefault();
+}));
+
+document.getElementById("readTextBtn").addEventListener("click", () => {
+  const t = document.getElementById("listingText").value;
+  if(!t.trim()){ status("Paste the listing text into the box first.", false, true); return; }
+  status("");
+  showFound(parseListing(t), "the text you pasted");
+});
 
 /* ---------- boot ---------- */
 (function init(){

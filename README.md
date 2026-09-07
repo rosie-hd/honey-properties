@@ -18,6 +18,21 @@ Open `index.html` in any browser — there is no build step and no server.
 - **Price per sq ft** for the subject property against a spread of comparable sales,
   filtered by size, distance and recency.
 
+## Reading a listing
+
+Drop a **brochure or a printed listing PDF** on the panel at the top and it pulls out
+the asking price, the floor area, the property name and the listing URL, showing the
+sentence each figure came from. Nothing is applied until you click; nothing is
+uploaded — the file is parsed in your browser.
+
+Pasting the listing text is the most reliable route of all. Screenshots are read with
+OCR as a best effort: clean screenshots of text usually work, floorplans often do not.
+
+Areas quoted in square metres are converted. A row labelled NIA wins over a larger
+GIA total, because the model underwrites net internal area. Figures on a "per annum",
+"pcm", "per sq ft", "service charge" or "stamp duty" line are never mistaken for the
+asking price.
+
 ## Using it
 
 Each deal carries a **listing link** at the top, kept alongside the assumptions so the
