@@ -72,10 +72,23 @@ header.top{
   box-shadow:0 0 0 3px color-mix(in srgb,var(--honey) 22%,transparent)}
 .brand small{color:var(--muted);font-size:12px}
 header.top .spacer{flex:1}
+.idblock{display:flex;flex-direction:column;gap:2px;min-width:290px;flex:1 1 290px;max-width:460px}
 #propName{
   background:transparent;border:none;border-bottom:1px solid var(--hair);
-  color:var(--ink);font:inherit;font-weight:600;font-size:15px;padding:4px 2px;min-width:220px;
+  color:var(--ink);font:inherit;font-weight:600;font-size:15px;padding:4px 2px;width:100%;
 }
+.linkrow{display:flex;align-items:baseline;gap:8px}
+#propLink{
+  flex:1;min-width:0;background:transparent;border:none;color:var(--ink-2);
+  font-family:var(--body);font-size:11.5px;padding:2px 2px;text-overflow:ellipsis;
+}
+#propLink::placeholder{color:var(--muted)}
+#propLink:focus{outline:none;color:var(--ink)}
+#propLinkOpen{
+  flex:none;font-size:11.5px;font-weight:600;color:var(--honey);text-decoration:none;
+  white-space:nowrap;border-bottom:1px solid transparent;
+}
+#propLinkOpen:hover{border-bottom-color:var(--honey)}
 #propName:focus{outline:none;border-bottom-color:var(--honey)}
 .btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
 .btn{
@@ -232,7 +245,15 @@ details.imp summary:hover{color:var(--ink)}
 
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
-  <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
+  <div class="idblock">
+    <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
+    <div class="linkrow">
+      <input id="propLink" type="url" spellcheck="false" autocomplete="off"
+             placeholder="Paste the listing link — Rightmove, LoopNet, the agent's PDF…"
+             aria-label="Listing link for this property">
+      <a id="propLinkOpen" href="#" target="_blank" rel="noopener noreferrer" hidden>Open listing &#8599;</a>
+    </div>
+  </div>
   <div class="spacer"></div>
   <div class="seg" id="ccySeg" role="group" aria-label="Currency">
     <button data-ccy="$" aria-pressed="true">$</button>
@@ -421,7 +442,7 @@ details.imp summary:hover{color:var(--ink)}
    1. STATE
    ========================================================================== */
 const DEFAULTS = {
-  name:"Untitled property", ccy:"$",
+  name:"Untitled property", link:"", ccy:"$",
   sqft:      28000,
   purchase:  5000000,
   acqPct:    5,
@@ -1229,6 +1250,27 @@ document.getElementById("capSeg").addEventListener("click", e => {
   S.capInt = +b.dataset.cap; applyModes(); render();
 });
 document.getElementById("propName").addEventListener("input", e => { S.name = e.target.value; save(); });
+
+/* The listing link is kept with the deal so the assumptions always point back at
+   their source. The page cannot read the listing itself — a static file in a
+   browser is blocked from fetching another site, and the portals block it too —
+   so the figures below it stay yours to enter. */
+const linkInput = document.getElementById("propLink");
+const linkOpen  = document.getElementById("propLinkOpen");
+function syncLink(){
+  const raw = (S.link || "").trim();
+  const href = raw && !/^https?:\/\//i.test(raw) ? "https://" + raw : raw;
+  let ok = false;
+  try{
+    const u = new URL(href);
+    ok = ["http:","https:"].includes(u.protocol)   // never javascript:, data:, file:
+      && !/\s/.test(raw)                            // plain prose is not a link
+      && /^[^.\s]+(\.[^.\s]+)+$/.test(u.hostname); // needs a real dotted host
+  }catch(e){ ok = false; }
+  linkOpen.hidden = !ok;
+  if(ok){ linkOpen.href = href; linkOpen.title = href; }
+}
+linkInput.addEventListener("input", e => { S.link = e.target.value; syncLink(); save(); });
 document.getElementById("themeBtn").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
   const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
@@ -1239,14 +1281,15 @@ document.getElementById("themeBtn").addEventListener("click", () => {
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
   if(!confirm("Reset every assumption to the defaults? Your comps list is kept.")) return;
-  const name = S.name, ccy = S.ccy;
-  S = Object.assign({}, DEFAULTS, {name, ccy});
+  const name = S.name, ccy = S.ccy, link = S.link;
+  S = Object.assign({}, DEFAULTS, {name, ccy, link});
   applyModes(); buildAffixes(); render();
 });
 document.getElementById("copyBtn").addEventListener("click", async () => {
   const m = model();
   const lines = [
     `${S.name} — ${nf(S.sqft,0)} sq ft`,
+    S.link ? `Listing: ${S.link}` : null,
     `Purchase ${money(S.purchase)} (${money(S.purchase/S.sqft,0)}/sf) + fit-out ${money(m.fitTotal)} (${money(m.fitTotal/S.sqft,0)}/sf)`,
     `Total cost ${money(m.totalCost)} · debt ${money(m.totalDebt)} · CASH IN ${money(m.equity)}`,
     `Stabilised NOI ${money(m.stabNOI)} · yield on cost ${pct(m.stabNOI/m.totalCost,2)}`,
@@ -1254,7 +1297,7 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
     `Exit ${money(m.exitValue)} @ ${nf(S.exitCap,2)}% cap · net proceeds ${money(m.netProceeds)}`,
     "",
     "Year\tNOI\tDebt service\tCash flow\tCash-on-cash"
-  ].concat(m.years.map(r => `${r.y}\t${Math.round(r.noi)}\t${Math.round(r.ds)}\t${Math.round(r.cf)}\t${pct(r.coc,1)}`));
+  ].filter(Boolean).concat(m.years.map(r => `${r.y}\t${Math.round(r.noi)}\t${Math.round(r.ds)}\t${Math.round(r.cf)}\t${pct(r.coc,1)}`));
   try{
     await navigator.clipboard.writeText(lines.join("\n"));
     const b = document.getElementById("copyBtn"); const t = b.textContent;
@@ -1336,6 +1379,8 @@ let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(ren
   load();
   buildFields();
   document.getElementById("propName").value = S.name;
+  linkInput.value = S.link || "";
+  syncLink();
   applyModes();
   buildAffixes();
   render();

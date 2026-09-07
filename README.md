@@ -20,6 +20,11 @@ Open `index.html` in any browser — there is no build step and no server.
 
 ## Using it
 
+Each deal carries a **listing link** at the top, kept alongside the assumptions so the
+numbers always point back at their source. The page does not read the listing — a
+static file in a browser cannot fetch another site, and the portals block it anyway —
+so the figures stay yours to enter.
+
 Every figure is editable three ways: drag it sideways, scroll the wheel over it, or
 click and type. Shift for 10x steps, Alt for fine ones. Everything recalculates live
 and saves to your browser.
