@@ -5,8 +5,11 @@ five-year plan they add up to.
 
 ## Pages
 
-- **Plan** — the target, the ramp towards it, and where the money actually is today.
-- **Properties** — every deal on the shelf; click one to open its model.
+- **Deal** — one worked example, start to finish, in the order you would think about
+  it: buy at the bottom of what the area trades at, spend, sell at the top, then the
+  same again with extra floor area built. Every figure is editable.
+- **Properties** — every deal on the shelf; click one to open its full model.
+- **5-year plan** — the profit target, the ramp towards it, and where the money is today.
 
 ## The plan
 

@@ -246,6 +246,60 @@ details.imp summary:hover{color:var(--ink)}
 .foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
+.deal-hero .hero{margin-bottom:0}
+.spread-row{margin-top:16px}
+.spread-row #d-spread{display:flex;gap:22px;flex-wrap:wrap}
+.spread-row .field{margin-bottom:0;width:186px}
+
+.steps{list-style:none;margin:0;padding:0}
+.step{
+  display:grid;grid-template-columns:26px minmax(0,1fr) 190px 150px;gap:14px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--grid);
+}
+.step:last-child{border-bottom:none}
+.stepn{
+  font-family:var(--mono);font-size:10.5px;color:var(--muted);text-align:center;
+  line-height:20px;height:20px;border-radius:50%;background:var(--surface-2);
+}
+.stepn:empty{background:none}
+.steplab{display:flex;flex-direction:column;gap:1px;min-width:0}
+.steplab b{font-size:13.5px;font-weight:600}
+.steplab em{font-style:normal;font-size:11.5px;color:var(--muted)}
+.stepf{display:flex;justify-content:flex-end}
+.stepf .field{margin-bottom:0;width:100%}
+.stepf .field-head{display:none}
+.stepf .field-input{height:34px}
+.stepv{
+  font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;
+}
+.derived{
+  font-family:var(--display);font-size:15px;font-weight:600;text-align:right;width:100%;
+  padding-right:10px;
+}
+.derived.big{font-size:19px;letter-spacing:-.02em}
+.step.subtotal{background:var(--surface-2);border-radius:8px;padding-left:9px;padding-right:0;margin:4px 0}
+.step.total{border-top:1px solid var(--axis);border-bottom:1px solid var(--axis);margin:6px 0;padding:13px 9px 13px 0;background:var(--surface-2);border-radius:8px}
+.step.total .steplab b{font-size:15px}
+.step.result{
+  margin-top:8px;padding:14px 9px;border-radius:9px;border:1px solid color-mix(in srgb,var(--good) 35%,transparent);
+  background:color-mix(in srgb,var(--good) 8%,var(--surface));border-bottom:1px solid color-mix(in srgb,var(--good) 35%,transparent);
+}
+.step.result .steplab b{font-size:15px}
+.step.substep{display:block;padding:0;border-bottom:none}
+.miscgrid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:10px 18px;
+  background:var(--surface-2);border-radius:9px;padding:14px;margin:2px 0 8px;
+}
+.miscgrid .field{margin-bottom:0}
+.disclose{
+  background:none;border:none;padding:0;font:inherit;font-size:11.5px;color:var(--honey);
+  cursor:pointer;text-decoration:underline;text-underline-offset:2px;
+}
+@media (max-width:760px){
+  .step{grid-template-columns:22px minmax(0,1fr);row-gap:6px}
+  .stepf,.stepv{grid-column:2;justify-content:flex-start;text-align:left}
+  .derived{text-align:left;padding-right:0}
+}
 .mainnav{display:inline-flex;gap:2px;background:var(--surface-2);border-radius:8px;padding:2px}
 .mainnav button{
   background:transparent;border:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:500;
@@ -362,8 +416,9 @@ body.on-projects .model-only{display:none !important}
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
   <nav class="mainnav" id="mainnav">
-    <button data-go="#/">Plan</button>
+    <button data-go="#/">Deal</button>
     <button data-go="#/properties">Properties</button>
+    <button data-go="#/plan">5-year plan</button>
   </nav>
   <div class="idblock model-only">
     <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
@@ -387,6 +442,143 @@ body.on-projects .model-only{display:none !important}
 </header>
 
 <div id="homeView" hidden>
+  <section class="card summary deal-hero">
+    <div class="hero">
+      <div>
+        <div class="lab">Profit on this deal</div>
+        <div class="val" id="dProfit">—</div>
+        <div class="note" id="dProfitNote">—</div>
+      </div>
+      <div class="side">
+        <div><div class="lab">Cash you put in</div><div class="v2" id="dCash">—</div></div>
+        <div><div class="lab">Return on that cash</div><div class="v2" id="dRoe">—</div></div>
+        <div><div class="lab">Held for</div><div class="v2" id="dHeld">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>Buy at the bottom, sell at the top</h2>
+    <p class="sub">What the area trades at, where you buy into it, and where you sell out of it.</p>
+    <svg id="spreadChart" class="chart" role="img" aria-label="Where the purchase and target sale price sit in the local range"></svg>
+    <div class="spread-row"><div id="d-spread"></div></div>
+  </div>
+
+  <div class="card">
+    <h2>The deal, line by line</h2>
+    <ol class="steps">
+      <li class="step">
+        <span class="stepn">1</span>
+        <span class="steplab"><b>Purchase price</b><em>at the bottom of the range</em></span>
+        <span class="stepf" id="d-price"></span>
+        <span class="stepv" id="vPurchasePsf">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Floor area</b><em>what you are buying</em></span>
+        <span class="stepf" id="d-area"></span>
+        <span class="stepv"></span>
+      </li>
+      <li class="step">
+        <span class="stepn">2</span>
+        <span class="steplab"><b>Other purchase costs</b>
+          <em><button type="button" class="disclose" id="miscToggle" aria-expanded="false">show the breakdown</button></em></span>
+        <span class="stepf"><span class="derived" id="vMisc">—</span></span>
+        <span class="stepv" id="vMiscPsf">—</span>
+      </li>
+      <li class="step substep" id="miscPanel" hidden>
+        <div id="d-misc" class="miscgrid"></div>
+      </li>
+      <li class="step">
+        <span class="stepn">3</span>
+        <span class="steplab"><b>Renovation</b><em>the works budget</em></span>
+        <span class="stepf" id="d-reno"></span>
+        <span class="stepv" id="vRenoPsf">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn">4</span>
+        <span class="steplab"><b>Interest</b><em id="vIntNote">—</em></span>
+        <span class="stepf"><span class="derived" id="vInterest">—</span></span>
+        <span class="stepv"></span>
+      </li>
+      <li class="step subtotal">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Total cost</b></span>
+        <span class="stepf"><span class="derived big" id="vCost1">—</span></span>
+        <span class="stepv" id="vCost1Psf">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn">5</span>
+        <span class="steplab"><b>Loan against the purchase</b><em id="vLoanNote">—</em></span>
+        <span class="stepf"><span class="derived neg" id="vLoan">—</span></span>
+        <span class="stepv"></span>
+      </li>
+      <li class="step total">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Cash you put in</b><em>deposit, fees, works and interest</em></span>
+        <span class="stepf"><span class="derived big" id="vCash1">—</span></span>
+        <span class="stepv" id="vCash1Psf">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn">6</span>
+        <span class="steplab"><b>Sale price</b><em>at the top of the range</em></span>
+        <span class="stepf" id="d-target"></span>
+        <span class="stepv" id="vSale1">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn">7</span>
+        <span class="steplab"><b>Selling costs</b><em>agent and legal on the way out</em></span>
+        <span class="stepf" id="d-salec"></span>
+        <span class="stepv" id="vSaleCost1">—</span>
+      </li>
+      <li class="step result">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Profit</b><em id="vProfit1Note">—</em></span>
+        <span class="stepf"><span class="derived big pos" id="vProfit1">—</span></span>
+        <span class="stepv" id="vRoe1">—</span>
+      </li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Now add floor area</h2>
+    <p class="sub" id="addLead">—</p>
+    <ol class="steps">
+      <li class="step">
+        <span class="stepn">8</span>
+        <span class="steplab"><b>Extra area you build</b><em>extension, mezzanine, roof</em></span>
+        <span class="stepf" id="d-addsf"></span>
+        <span class="stepv" id="vNewArea">—</span>
+      </li>
+      <li class="step">
+        <span class="stepn">9</span>
+        <span class="steplab"><b>Cost to build it</b><em>all-in construction rate</em></span>
+        <span class="stepf" id="d-devpsf"></span>
+        <span class="stepv" id="vDevCost">—</span>
+      </li>
+      <li class="step subtotal">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Cash you put in now</b></span>
+        <span class="stepf"><span class="derived big" id="vCash2">—</span></span>
+        <span class="stepv"></span>
+      </li>
+      <li class="step">
+        <span class="stepn">10</span>
+        <span class="steplab"><b>New sale price</b><em id="vSale2Note">—</em></span>
+        <span class="stepf"><span class="derived" id="vSale2">—</span></span>
+        <span class="stepv" id="vSale2Psf">—</span>
+      </li>
+      <li class="step result">
+        <span class="stepn"></span>
+        <span class="steplab"><b>Profit with the extra area</b><em id="vProfit2Note">—</em></span>
+        <span class="stepf"><span class="derived big pos" id="vProfit2">—</span></span>
+        <span class="stepv" id="vRoe2">—</span>
+      </li>
+    </ol>
+  </div>
+</div>
+
+<div id="planView" hidden>
   <section class="card summary plan-hero">
     <div class="hero">
       <div>
@@ -781,6 +973,72 @@ const PLAN_DEFAULTS = {
 };
 let PLAN = Object.assign({}, PLAN_DEFAULTS);
 
+/* The worked example on the front page: one deal, start to finish, in the order
+   you would actually think about it. Buy at the bottom of what the area trades
+   at, spend, sell at the top — then the same again with extra floor area built. */
+const DEAL_DEFAULTS = {
+  ccy:"£",
+  sqft:        28000,
+  purchase:    5000000,
+  spreadLow:   175,
+  spreadHigh:  460,
+  targetPsf:   450,
+  ltv:         75,
+  rate:        8,
+  months:      18,
+  reno:        3000000,
+  saleCostPct: 1.5,
+  addSqft:     6000,
+  devPsf:      250,
+  /* the misc line, itemised */
+  cSdlt:       239500,
+  cLegal:      25000,
+  cSurvey:     8000,
+  cAgent:      50000,
+  cValuation:  5000,
+  cArrange:    37500,
+  cInsurance:  6000,
+  cOther:      10000
+};
+let DEAL = Object.assign({}, DEAL_DEFAULTS);
+const MISC_KEYS = ["cSdlt","cLegal","cSurvey","cAgent","cValuation","cArrange","cInsurance","cOther"];
+
+function dealCalc(){
+  const d = DEAL;
+  const misc = MISC_KEYS.reduce((a,k) => a + (+d[k] || 0), 0);
+  const loan     = d.purchase * d.ltv/100;
+  const deposit  = d.purchase - loan;
+  const interest = loan * (d.rate/100) * (d.months/12);
+
+  const cost1  = d.purchase + misc + d.reno + interest;
+  const cash1  = cost1 - loan;
+  const sale1  = d.targetPsf * d.sqft;
+  const sCost1 = sale1 * d.saleCostPct/100;
+  const net1   = sale1 - sCost1 - loan;
+  const profit1 = net1 - cash1;
+
+  const devCost = d.addSqft * d.devPsf;
+  const sqft2   = d.sqft + d.addSqft;
+  const cost2   = cost1 + devCost;
+  const cash2   = cash1 + devCost;
+  const sale2   = d.targetPsf * sqft2;
+  const sCost2  = sale2 * d.saleCostPct/100;
+  const net2    = sale2 - sCost2 - loan;
+  const profit2 = net2 - cash2;
+
+  return {misc, loan, deposit, interest,
+    purchasePsf: d.purchase / Math.max(1,d.sqft),
+    renoPsf:     d.reno / Math.max(1,d.sqft),
+    cost1, cash1, sale1, sCost1, net1, profit1,
+    allIn1: cost1 / Math.max(1,d.sqft),
+    roe1: cash1 > 0 ? profit1/cash1 : 0,
+    devCost, sqft2, cost2, cash2, sale2, sCost2, net2, profit2,
+    allIn2: cost2 / Math.max(1,sqft2),
+    roe2: cash2 > 0 ? profit2/cash2 : 0,
+    uplift: profit2 - profit1,
+    marginPsf: d.targetPsf - d.devPsf};
+}
+
 function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]); }
@@ -811,6 +1069,7 @@ function loadStore(){
   if(!STORE.projects.length) STORE.projects.push(blankProject());
   if(!STORE.projects.some(p => p.id === STORE.activeId)) STORE.activeId = STORE.projects[0].id;
   PLAN = Object.assign({}, PLAN_DEFAULTS, STORE.plan || {});
+  DEAL = Object.assign({}, DEAL_DEFAULTS, STORE.deal || {});
   if(!STORE.plan){
     /* start the plan from the deals already on the shelf rather than a guess,
        and open with enough capital to run two of them — the starting capital is
@@ -826,7 +1085,7 @@ function loadStore(){
   STORE.plan = PLAN;
 }
 function saveStore(){
-  STORE.plan = PLAN;
+  STORE.plan = PLAN; STORE.deal = DEAL;
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); }catch(e){}
 }
 function activeProject(){ return STORE.projects.find(p => p.id === STORE.activeId); }
@@ -872,20 +1131,23 @@ let VIEW = "home";
 function showView(v){
   VIEW = v;
   document.getElementById("homeView").hidden     = v !== "home";
+  document.getElementById("planView").hidden     = v !== "plan";
   document.getElementById("projectsView").hidden = v !== "projects";
   document.getElementById("modelView").hidden    = v !== "model";
   document.body.classList.toggle("on-projects", v !== "model");
+  const navFor = {home:"#/", plan:"#/plan", projects:"#/properties", model:"#/properties"};
   document.querySelectorAll("#mainnav button").forEach(b => {
-    const on = (b.dataset.go === "#/" && v === "home") ||
-               (b.dataset.go === "#/properties" && (v === "projects" || v === "model"));
-    if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+    if(b.dataset.go === navFor[v]) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
   });
   if(v === "projects") renderProjects();
-  if(v === "home") renderHome();
+  if(v === "home") renderDeal();
+  if(v === "plan") renderHome();
 }
 function rerender(){
   if(VIEW === "model") render();
-  else if(VIEW === "home"){ saveStore(); renderHome(); }
+  else if(VIEW === "home"){ saveStore(); renderDeal(); }
+  else if(VIEW === "plan"){ saveStore(); renderHome(); }
   else renderProjects();
 }
 
@@ -968,6 +1230,7 @@ function route(){
   const m = h.match(/^#\/p\/(.+)$/);
   if(m && STORE.projects.some(p => p.id === m[1])) openProject(m[1], false);
   else if(h.startsWith("#/properties")) showView("projects");
+  else if(h.startsWith("#/plan")) showView("plan");
   else showView("home");
 }
 
@@ -1005,6 +1268,27 @@ const FIELDS = [
   {k:"exitPrice",l:"Sale price",            min:0,     max:60000000,st:25000,pre:"ccy",   dec:0, g:"g-exit2"},
   {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
 
+  {k:"purchase_d",  l:"Purchase price",      min:250000, max:30000000, st:50000, pre:"ccy", dec:0, g:"d-price", on:"deal", src:"purchase", compact:1},
+  {k:"sqft",        l:"Floor area",          min:500,    max:500000,  st:250,   suf:" sq ft", dec:0, g:"d-area", on:"deal", compact:1},
+  {k:"spreadLow",   l:"Bottom of the range", min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
+  {k:"spreadHigh",  l:"Top of the range",    min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
+  {k:"targetPsf",   l:"Target sale price",   min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-target", on:"deal", compact:1},
+  {k:"ltv",         l:"Loan",                min:0,      max:95,      st:1,     suf:"%",   dec:0, g:"d-fin",  on:"deal", compact:1},
+  {k:"rate",        l:"Interest rate",       min:0,      max:20,      st:0.25,  suf:"%",   dec:2, g:"d-fin",  on:"deal", compact:1},
+  {k:"months",      l:"Months to sale",      min:1,      max:72,      st:1,     suf:" months", dec:0, g:"d-fin", on:"deal", compact:1},
+  {k:"reno",        l:"Renovation budget",   min:0,      max:20000000,st:25000, pre:"ccy", dec:0, g:"d-reno", on:"deal", compact:1},
+  {k:"saleCostPct", l:"Selling costs",       min:0,      max:10,      st:0.25,  suf:"%",   dec:2, g:"d-salec", on:"deal", compact:1},
+  {k:"addSqft",     l:"Extra area to build", min:0,      max:200000,  st:250,   suf:" sq ft", dec:0, g:"d-addsf", on:"deal", compact:1},
+  {k:"devPsf",      l:"Build cost",          min:0,      max:2000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-devpsf", on:"deal", compact:1},
+  {k:"cSdlt",       l:"Stamp duty",          min:0, max:5000000, st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cLegal",      l:"Legal fees",          min:0, max:500000,  st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cSurvey",     l:"Building survey",     min:0, max:200000,  st:250, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cAgent",      l:"Agent / acquisition fee", min:0, max:1000000, st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cValuation",  l:"Valuation",           min:0, max:200000,  st:250, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cArrange",    l:"Lender arrangement fee", min:0, max:1000000, st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cInsurance",  l:"Insurance during works", min:0, max:300000, st:250, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+  {k:"cOther",      l:"Anything else",       min:0, max:1000000, st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
+
   {k:"startCapital",  l:"Capital you start with", min:100000, max:50000000, st:50000, pre:"ccy", dec:0, g:"g-plan", on:"plan"},
   {k:"equityPerProj", l:"Equity per project",     min:50000,  max:20000000, st:25000, pre:"ccy", dec:0, g:"g-plan", on:"plan"},
   {k:"projectMonths", l:"Months start to exit",   min:3,      max:72,       st:1,     suf:" months", dec:0, g:"g-plan", on:"plan"},
@@ -1018,6 +1302,9 @@ const FIELDS = [
   {k:"cYears",   l:"Sold within last",      min:1,     max:10,     st:1,    suf:" years", dec:0, g:"g-comp"}
 ];
 const F = {}; FIELDS.forEach(f => F[f.k] = f);
+/* purchase_d writes DEAL.purchase — the key on the property model is taken */
+FIELDS.forEach(f => { if(f.src) f.store = f.src; });
+function fkey(f){ return f.store || f.k; }
 
 /* ==========================================================================
    3. FORMATTING
@@ -1163,7 +1450,7 @@ function fieldHTML(f){
              role="spinbutton" aria-valuemin="${f.min}" aria-valuemax="${f.max}">
       ${f.suf ? `<span class="aff suf">${f.suf}</span>` : ""}
     </div>
-    <input type="range" class="rng" min="${lim(f).min}" max="${lim(f).max}" step="${lim(f).st}" aria-label="${f.l}">
+    ${f.compact ? "" : `<input type="range" class="rng" min="${lim(f).min}" max="${lim(f).max}" step="${lim(f).st}" aria-label="${f.l}">`}
   </div>`;
 }
 
@@ -1180,14 +1467,16 @@ function buildFields(){
 /* A field's limits and its step live in whatever unit it is being shown in;
    its stored value never leaves square feet. */
 function lim(f, unit){
+  if(f.on === "deal") return {min:f.min, max:f.max, st:f.st, dec:f.dec, suf:f.suf || ""};
   const u = AREA_UNITS[unit || S.areaUnit] || AREA_UNITS.sqft;
   if(f.area === "size") return {min:u.min, max:u.max, st:u.st, dec:u.dec, suf:u.suf};
   if(f.area === "rate") return {min:f.min*u.perSqft, max:f.max*u.perSqft, st:f.st*u.perSqft,
                                 dec: u.perSqft > 1 ? 0 : f.dec, suf:" / " + u.short};
   return {min:f.min, max:f.max, st:f.st, dec:f.dec, suf:f.suf || ""};
 }
-function bag(f){ return f.on === "plan" ? PLAN : S; }
+function bag(f){ return f.on === "plan" ? PLAN : f.on === "deal" ? DEAL : S; }
 function areaScale(f, unit){
+  if(f.on === "deal") return 1;             /* the worked example is always sq ft */
   const k = (AREA_UNITS[unit || S.areaUnit] || AREA_UNITS.sqft).perSqft;
   return f.area === "size" ? 1/k : f.area === "rate" ? k : 1;
 }
@@ -1200,18 +1489,19 @@ function setVal(k, v, skipRender){          /* v arrives in the displayed unit *
   const f = F[k], L = lim(f);
   v = clamp(f, v);
   v = Math.round(v * Math.pow(10, L.dec+2)) / Math.pow(10, L.dec+2);
-  bag(f)[k] = toStore(f, v);
+  bag(f)[fkey(f)] = toStore(f, v);
   syncField(k);
   if(!skipRender) rerender();
 }
 function syncField(k){
   const f = F[k], node = document.querySelector(`.field[data-k="${k}"]`);
   if(!node) return;
-  const L = lim(f), d = toDisp(f, bag(f)[k]);
+  const L = lim(f), d = toDisp(f, bag(f)[fkey(f)]);
   const inp = node.querySelector("input.num"), rng = node.querySelector("input[type=range]");
+  if(!inp) return;
   if(document.activeElement !== inp) inp.value = nf(d, L.dec);
   inp.setAttribute("aria-valuenow", d);
-  rng.min = L.min; rng.max = L.max; rng.step = L.st; rng.value = d;
+  if(rng){ rng.min = L.min; rng.max = L.max; rng.step = L.st; rng.value = d; }
   const pre = node.querySelector(".aff.pre");
   if(pre && f.pre === "ccy") pre.textContent = C();
   const suf = node.querySelector(".aff.suf");
@@ -1224,20 +1514,22 @@ function wireField(f){
   const inp = node.querySelector("input.num");
   const rng = node.querySelector("input[type=range]");
   const lab = node.querySelector("label");
+  if(!inp) return;
 
+  if(!inp) return;
   const step = () => lim(f).st;
-  rng.addEventListener("input", () => setVal(f.k, parseFloat(rng.value)));
+  if(rng) rng.addEventListener("input", () => setVal(f.k, parseFloat(rng.value)));
 
   // typing
-  inp.addEventListener("focus", () => { inp.value = String(toDisp(f, bag(f)[f.k])); inp.select(); });
+  inp.addEventListener("focus", () => { inp.value = String(toDisp(f, bag(f)[fkey(f)])); inp.select(); });
   inp.addEventListener("blur",  () => { commit(); syncField(f.k); });
   inp.addEventListener("keydown", e => {
     if(e.key === "Enter"){ commit(); inp.blur(); }
     else if(e.key === "ArrowUp" || e.key === "ArrowDown"){
       e.preventDefault();
       const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-      setVal(f.k, toDisp(f, bag(f)[f.k]) + step()*mult*(e.key==="ArrowUp"?1:-1));
-      inp.value = String(toDisp(f, bag(f)[f.k]));
+      setVal(f.k, toDisp(f, bag(f)[fkey(f)]) + step()*mult*(e.key==="ArrowUp"?1:-1));
+      inp.value = String(toDisp(f, bag(f)[fkey(f)]));
     }
   });
   function commit(){
@@ -1250,8 +1542,8 @@ function wireField(f){
   const onWheel = e => {
     e.preventDefault();
     const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-    setVal(f.k, toDisp(f, bag(f)[f.k]) - Math.sign(e.deltaY) * step() * mult);
-    if(document.activeElement === inp) inp.value = String(toDisp(f, bag(f)[f.k]));
+    setVal(f.k, toDisp(f, bag(f)[fkey(f)]) - Math.sign(e.deltaY) * step() * mult);
+    if(document.activeElement === inp) inp.value = String(toDisp(f, bag(f)[fkey(f)]));
   };
   inp.addEventListener("wheel", onWheel, {passive:false});
   lab.addEventListener("wheel", onWheel, {passive:false});
@@ -1260,7 +1552,7 @@ function wireField(f){
   [inp, lab].forEach(handle => {
     handle.addEventListener("pointerdown", e => {
       if(e.button !== 0) return;
-      const startX = e.clientX, startV = toDisp(f, bag(f)[f.k]);
+      const startX = e.clientX, startV = toDisp(f, bag(f)[fkey(f)]);
       let moved = false;
       const isInput = handle === inp;
       const move = ev => {
@@ -2568,7 +2860,119 @@ function renderHome(){
   renderPortfolio();
   S.ccy = ccySave;
 }
+/* ==========================================================================
+   13. THE WORKED DEAL
+   ========================================================================== */
+function drawSpread(){
+  const svg = document.getElementById("spreadChart");
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 780, H = 168;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {l:26, r:26};
+  const iw = W - pad.l - pad.r;
+  const c = dealCalc(), d = DEAL;
+
+  const lo = Math.min(d.spreadLow, c.purchasePsf, d.targetPsf);
+  const hi = Math.max(d.spreadHigh, c.purchasePsf, d.targetPsf);
+  const padv = (hi - lo) * 0.14 || 10;
+  const a = lo - padv, b = hi + padv;
+  const X = v => pad.l + (v - a) / ((b - a) || 1) * iw;
+  const y = 96;
+
+  /* the band the area actually trades in */
+  el("rect",{x:X(d.spreadLow), y:y-13, width:Math.max(2, X(d.spreadHigh)-X(d.spreadLow)), height:26,
+             rx:6, fill:"var(--s1)", "fill-opacity":.13, stroke:"var(--s1)", "stroke-opacity":.3},svg);
+  el("line",{x1:pad.l, x2:W-pad.r, y1:y, y2:y, stroke:"var(--axis)","stroke-width":1},svg);
+
+  [[d.spreadLow,"bottom of the range"],[d.spreadHigh,"top of the range"]].forEach(([v,lab],i) => {
+    el("line",{x1:X(v),x2:X(v),y1:y-13,y2:y+13,stroke:"var(--s1)","stroke-width":2,"stroke-opacity":.55},svg);
+    el("text",{x:X(v), y:y+31, "text-anchor": i ? "end" : "start", fill:"var(--muted)","font-size":11},svg)
+      .textContent = `${C()}${nf(v,0)}`;
+    el("text",{x:X(v), y:y+45, "text-anchor": i ? "end" : "start", fill:"var(--muted)","font-size":10.5},svg)
+      .textContent = lab;
+  });
+
+  /* the journey from where you buy to where you sell */
+  const bx = X(c.purchasePsf), sx = X(d.targetPsf);
+  el("path",{d:`M${bx} ${y-30} L${sx} ${y-30}`, stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round"},svg);
+  el("path",{d:`M${sx-7} ${y-35} L${sx} ${y-30} L${sx-7} ${y-25}`, fill:"none",
+             stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+  el("text",{x:(bx+sx)/2, y:y-39, "text-anchor":"middle", fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
+    .textContent = `+${C()}${nf(DEAL.targetPsf - c.purchasePsf,0)} a sq ft`;
+
+  [[bx, c.purchasePsf, "You buy here", "var(--s2)"],
+   [sx, DEAL.targetPsf, "You sell here", "var(--good)"]].forEach(([x,v,lab,col],i) => {
+    el("circle",{cx:x, cy:y, r:7, fill:col, stroke:"var(--surface)","stroke-width":3},svg);
+    el("text",{x, y:y-52, "text-anchor":"middle", fill:"var(--ink)","font-size":12,"font-weight":640},svg)
+      .textContent = `${C()}${nf(v,0)}/sf`;
+    el("text",{x, y:y-66, "text-anchor":"middle", fill:"var(--muted)","font-size":10.5},svg).textContent = lab;
+  });
+}
+
+function renderDeal(){
+  const ccySave = S.ccy; S.ccy = DEAL.ccy;
+  FIELDS.forEach(f => { if(f.on === "deal") syncField(f.k); });
+  const c = dealCalc(), d = DEAL;
+  const set = (id, t) => { const n = document.getElementById(id); if(n) n.textContent = t; };
+
+  set("dProfit", money(c.profit1));
+  set("dProfitNote",
+    `${money(d.purchase)} building, ${moneyC(d.reno)} of works, sold at ${C()}${nf(d.targetPsf,0)} a sq ft ` +
+    `after ${d.months} months`);
+  set("dCash", moneyC(c.cash1));
+  const roeEl = document.getElementById("dRoe");
+  roeEl.textContent = pct(c.roe1,0);
+  roeEl.className = "v2 " + (c.roe1 >= 1 ? "pos" : c.roe1 >= 0 ? "" : "neg");
+  set("dHeld", d.months + " months");
+
+  set("vPurchasePsf", `${C()}${nf(c.purchasePsf,0)}/sf`);
+  set("vMisc", money(c.misc));
+  set("vMiscPsf", `${pct(c.misc/Math.max(1,d.purchase),1)} of the price`);
+  set("vRenoPsf", `${C()}${nf(c.renoPsf,0)}/sf`);
+  set("vInterest", money(c.interest));
+  set("vIntNote", `${moneyC(c.loan)} at ${nf(d.rate,2)}% for ${d.months} months`);
+  set("vCost1", money(c.cost1));
+  set("vCost1Psf", `${C()}${nf(c.allIn1,0)}/sf all in`);
+  set("vLoan", "−" + money(c.loan));
+  set("vLoanNote", `${nf(d.ltv,0)}% of the purchase price · deposit ${moneyC(c.deposit)}`);
+  set("vCash1", money(c.cash1));
+  set("vCash1Psf", `${C()}${nf(c.cash1/Math.max(1,d.sqft),0)}/sf`);
+  set("vSale1", money(c.sale1));
+  set("vSaleCost1", "−" + money(c.sCost1));
+  set("vProfit1", money(c.profit1));
+  set("vProfit1Note", `${money(c.net1)} back after repaying the loan, against ${money(c.cash1)} in`);
+  set("vRoe1", pct(c.roe1,0) + " on cash");
+
+  set("addLead",
+    `Building ${nf(d.addSqft,0)} sq ft at ${C()}${nf(d.devPsf,0)} a sq ft and selling it at ` +
+    `${C()}${nf(d.targetPsf,0)} leaves ${C()}${nf(c.marginPsf,0)} a sq ft of margin — ` +
+    `${money(c.uplift)} more profit on this deal.`);
+  set("vNewArea", `${nf(c.sqft2,0)} sq ft in total`);
+  set("vDevCost", money(c.devCost));
+  set("vCash2", money(c.cash2));
+  set("vSale2", money(c.sale2));
+  set("vSale2Note", `${nf(c.sqft2,0)} sq ft at ${C()}${nf(d.targetPsf,0)}`);
+  set("vSale2Psf", `${C()}${nf(c.allIn2,0)}/sf all in`);
+  set("vProfit2", money(c.profit2));
+  set("vProfit2Note", `${money(c.uplift)} more than without the extra area`);
+  set("vRoe2", pct(c.roe2,0) + " on cash");
+
+  ["vProfit1","vProfit2"].forEach((id,i) => {
+    const n = document.getElementById(id);
+    if(n) n.className = "derived big " + ((i ? c.profit2 : c.profit1) >= 0 ? "pos" : "neg");
+  });
+
+  drawSpread();
+  S.ccy = ccySave;
+}
 /* ---------- boot ---------- */
+document.getElementById("miscToggle").addEventListener("click", e => {
+  const panel = document.getElementById("miscPanel");
+  panel.hidden = !panel.hidden;
+  e.target.setAttribute("aria-expanded", String(!panel.hidden));
+  e.target.textContent = panel.hidden ? "show the breakdown" : "hide the breakdown";
+});
 document.getElementById("planCcySeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
   PLAN.ccy = b.dataset.pccy; saveStore(); renderHome();
