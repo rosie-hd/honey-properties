@@ -246,6 +246,32 @@ details.imp summary:hover{color:var(--ink)}
 .foot{color:var(--muted);font-size:11.5px;margin-top:26px;text-align:center;line-height:1.7}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
+.mainnav{display:inline-flex;gap:2px;background:var(--surface-2);border-radius:8px;padding:2px}
+.mainnav button{
+  background:transparent;border:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:500;
+  padding:5px 12px;border-radius:6px;cursor:pointer;
+}
+.mainnav button:hover{color:var(--ink)}
+.mainnav button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.plan-hero .hero{margin-bottom:16px}
+.home-cols{display:grid;grid-template-columns:352px minmax(0,1fr);gap:14px;align-items:start;margin-top:14px}
+@media (max-width:980px){.home-cols{grid-template-columns:1fr}}
+.planrule{height:1px;background:var(--hair);margin:14px 0}
+#portTable select{
+  background:var(--surface-2);border:1px solid transparent;border-radius:5px;color:var(--ink);
+  font-family:var(--body);font-size:12px;padding:3px 5px;width:100%;
+}
+#portTable select:focus{outline:none;border-color:var(--honey)}
+#portTable td{vertical-align:middle}
+.openlink{background:none;border:none;color:var(--honey);cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px}
+.openlink:hover{text-decoration:underline}
+.stall{
+  background:color-mix(in srgb,var(--crit) 10%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--crit) 40%,transparent);
+  border-radius:9px;padding:10px 13px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px;
+}
+.stall b{color:var(--crit)}
+
 /* ---------- the shelf of properties ---------- */
 body.on-projects .model-only{display:none !important}
 .proj-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:2px 0 18px}
@@ -335,7 +361,10 @@ body.on-projects .model-only{display:none !important}
 
 <header class="top">
   <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
-  <button class="btn" id="backBtn" hidden>&larr; All properties</button>
+  <nav class="mainnav" id="mainnav">
+    <button data-go="#/">Plan</button>
+    <button data-go="#/properties">Properties</button>
+  </nav>
   <div class="idblock model-only">
     <input id="propName" value="Untitled property" spellcheck="false" aria-label="Property name">
     <div class="linkrow">
@@ -348,14 +377,89 @@ body.on-projects .model-only{display:none !important}
   </div>
   <div class="spacer"></div>
   <div class="seg model-only" id="ccySeg" role="group" aria-label="Currency">
-    <button data-ccy="$" aria-pressed="true">$</button>
-    <button data-ccy="£" aria-pressed="false">£</button>
+    <button data-ccy="£" aria-pressed="true">£</button>
+    <button data-ccy="$" aria-pressed="false">$</button>
     <button data-ccy="€" aria-pressed="false">€</button>
   </div>
   <button class="btn" id="themeBtn">Theme</button>
   <button class="btn model-only" id="copyBtn">Copy summary</button>
   <button class="btn model-only" id="resetBtn">Reset</button>
 </header>
+
+<div id="homeView" hidden>
+  <section class="card summary plan-hero">
+    <div class="hero">
+      <div>
+        <div class="lab" id="heroLab">Net profit a year</div>
+        <div class="val" id="planHero">—</div>
+        <div class="note" id="planHeroNote">—</div>
+      </div>
+      <div class="side">
+        <div><div class="lab">Target</div><div class="v2" id="planTarget">—</div></div>
+        <div><div class="lab">Run rate hits target</div><div class="v2" id="planHit">—</div></div>
+        <div><div class="lab">Average a year</div><div class="v2" id="planAvg">—</div></div>
+        <div><div class="lab">Profit per project</div><div class="v2" id="planPer">—</div></div>
+      </div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="lab">Total invested</div><div class="v" id="acInv">—</div><div class="d" id="acInvD">—</div></div>
+      <div class="tile"><div class="lab">Total returned</div><div class="v" id="acRet">—</div><div class="d" id="acRetD">—</div></div>
+      <div class="tile"><div class="lab">Net so far</div><div class="v" id="acNet">—</div><div class="d" id="acNetD">—</div></div>
+      <div class="tile"><div class="lab">Months since start</div><div class="v" id="acMon">—</div><div class="d" id="acMonD">—</div></div>
+    </div>
+  </section>
+
+  <div class="card">
+    <h2>The ramp<span class="rt" id="rampSub"></span></h2>
+    <p class="sub" id="rampLead"></p>
+    <div class="legend">
+      <span><i style="background:var(--s1)"></i>Profit realised in the year</span>
+      <span><i style="background:var(--s2)"></i>Annual profit target</span>
+    </div>
+    <svg id="planChart" class="chart" role="img" aria-label="Profit realised each year against the annual target"></svg>
+    <div class="tbl-wrap" style="margin-top:12px">
+      <table id="planTable">
+        <thead><tr>
+          <th>Year</th><th>Dates</th><th>Projects started</th><th>Running at year end</th>
+          <th>Capital deployed</th><th>Profit realised</th><th>Cumulative</th><th>Run rate a year</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="home-cols">
+    <div class="card">
+      <h2>What the ramp depends on</h2>
+      <p class="sub">A 100% return means profit on a project equals the equity you put in.
+      So the target does not set the pace — these do.</p>
+      <div class="toggle-row">
+        <span>Currency</span>
+        <div class="seg" id="planCcySeg" role="group" aria-label="Plan currency">
+          <button data-pccy="£" aria-pressed="true">£</button>
+          <button data-pccy="$" aria-pressed="false">$</button>
+          <button data-pccy="€" aria-pressed="false">€</button>
+        </div>
+      </div>
+      <div id="g-plan"></div>
+      <div class="planrule"></div>
+      <div id="g-plan2"></div>
+    </div>
+    <div class="card">
+      <h2>Where the money actually is<span class="rt" id="portCount"></span></h2>
+      <p class="sub">Cash in and cash back for each property. Fill these in as things happen —
+      everything above the fold on this page is driven by them.</p>
+      <div class="tbl-wrap">
+        <table class="comps-tbl" id="portTable">
+          <thead><tr>
+            <th style="width:32%">Property</th><th>Status</th><th>Cash in</th><th>Cash back</th><th>Net</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="projectsView" hidden>
   <div class="proj-head">
@@ -586,7 +690,8 @@ body.on-projects .model-only{display:none !important}
    1. STATE
    ========================================================================== */
 const DEFAULTS = {
-  name:"Untitled property", link:"", ccy:"$", areaUnit:"sqft",
+  name:"Untitled property", link:"", ccy:"£", areaUnit:"sqft",
+  status:"pipeline", actualIn:0, actualOut:0,
   sqft:      28000,
   purchase:  5000000,
   acqPct:    5,
@@ -657,7 +762,24 @@ const STORE_KEY = "honey-properties-v2";  /* { projects:[…], activeId } */
    back. Every existing save() call site keeps its old meaning. */
 let S = Object.assign({}, DEFAULTS);
 let COMPS = SAMPLE_COMPS.map(c => Object.assign({}, c));
-let STORE = {projects:[], activeId:null};
+let STORE = {projects:[], activeId:null, plan:null};
+
+/* The five-year plan. Profit on a project equals the equity put into it when
+   the return is 100%, so the target does not set the pace — the capital you
+   start with and how long a project takes do. Those are the two levers, and
+   they are on the page. */
+const PLAN_DEFAULTS = {
+  ccy:            "£",
+  startDate:      "2026-10-01",
+  targetProfit:   1000000,
+  startCapital:   2000000,
+  equityPerProj:  1500000,
+  projectMonths:  24,
+  reinvestPct:    100,
+  startsPerYear:  4,
+  returnPct:      100
+};
+let PLAN = Object.assign({}, PLAN_DEFAULTS);
 
 function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, c =>
@@ -688,8 +810,23 @@ function loadStore(){
   }
   if(!STORE.projects.length) STORE.projects.push(blankProject());
   if(!STORE.projects.some(p => p.id === STORE.activeId)) STORE.activeId = STORE.projects[0].id;
+  PLAN = Object.assign({}, PLAN_DEFAULTS, STORE.plan || {});
+  if(!STORE.plan){
+    /* start the plan from the deals already on the shelf rather than a guess,
+       and open with enough capital to run two of them — the starting capital is
+       the one number only its owner knows, so it must at least not stall */
+    const eqs = STORE.projects.map(p => withProject(p, () => model().equity)).filter(v => v > 0);
+    if(eqs.length){
+      PLAN.equityPerProj = Math.round(eqs.reduce((a,b) => a+b, 0) / eqs.length);
+      PLAN.startCapital  = clamp(F.startCapital, PLAN.equityPerProj * 2);
+    }
+    const ccys = STORE.projects.map(p => (p.s || {}).ccy).filter(Boolean);
+    if(ccys.length) PLAN.ccy = ccys[0];
+  }
+  STORE.plan = PLAN;
 }
 function saveStore(){
+  STORE.plan = PLAN;
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(STORE)); }catch(e){}
 }
 function activeProject(){ return STORE.projects.find(p => p.id === STORE.activeId); }
@@ -731,12 +868,25 @@ function openProject(id, pushHash){
   if(pushHash !== false) location.hash = "#/p/" + id;
 }
 
+let VIEW = "home";
 function showView(v){
+  VIEW = v;
+  document.getElementById("homeView").hidden     = v !== "home";
   document.getElementById("projectsView").hidden = v !== "projects";
   document.getElementById("modelView").hidden    = v !== "model";
-  document.getElementById("backBtn").hidden      = v !== "model";
-  document.body.classList.toggle("on-projects", v === "projects");
+  document.body.classList.toggle("on-projects", v !== "model");
+  document.querySelectorAll("#mainnav button").forEach(b => {
+    const on = (b.dataset.go === "#/" && v === "home") ||
+               (b.dataset.go === "#/properties" && (v === "projects" || v === "model"));
+    if(on) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current");
+  });
   if(v === "projects") renderProjects();
+  if(v === "home") renderHome();
+}
+function rerender(){
+  if(VIEW === "model") render();
+  else if(VIEW === "home"){ saveStore(); renderHome(); }
+  else renderProjects();
 }
 
 function ago(ts){
@@ -814,9 +964,11 @@ function renderProjects(){
 }
 
 function route(){
-  const m = location.hash.match(/^#\/p\/(.+)$/);
+  const h = location.hash || "#/";
+  const m = h.match(/^#\/p\/(.+)$/);
   if(m && STORE.projects.some(p => p.id === m[1])) openProject(m[1], false);
-  else showView("projects");
+  else if(h.startsWith("#/properties")) showView("projects");
+  else showView("home");
 }
 
 /* ==========================================================================
@@ -852,6 +1004,14 @@ const FIELDS = [
   {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit2"},
   {k:"exitPrice",l:"Sale price",            min:0,     max:60000000,st:25000,pre:"ccy",   dec:0, g:"g-exit2"},
   {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
+
+  {k:"startCapital",  l:"Capital you start with", min:100000, max:50000000, st:50000, pre:"ccy", dec:0, g:"g-plan", on:"plan"},
+  {k:"equityPerProj", l:"Equity per project",     min:50000,  max:20000000, st:25000, pre:"ccy", dec:0, g:"g-plan", on:"plan"},
+  {k:"projectMonths", l:"Months start to exit",   min:3,      max:72,       st:1,     suf:" months", dec:0, g:"g-plan", on:"plan"},
+  {k:"startsPerYear", l:"New projects a year you can run", min:1, max:24,   st:1,     suf:" a year", dec:0, g:"g-plan", on:"plan"},
+  {k:"returnPct",     l:"Return on each project", min:0,      max:300,      st:5,     suf:"%", dec:0, g:"g-plan2", on:"plan"},
+  {k:"reinvestPct",   l:"Profit put back in",     min:0,      max:100,      st:5,     suf:"%", dec:0, g:"g-plan2", on:"plan"},
+  {k:"targetProfit",  l:"Annual profit target",   min:100000, max:20000000, st:50000, pre:"ccy", dec:0, g:"g-plan2", on:"plan"},
 
   {k:"cSqftTol", l:"Size tolerance",        min:5,     max:100,    st:5,    pre:"±", suf:"%", dec:0, g:"g-comp"},
   {k:"cDist",    l:"Max distance",          min:0.25,  max:10,     st:0.25, suf:" miles", dec:2, g:"g-comp"},
@@ -1026,6 +1186,7 @@ function lim(f, unit){
                                 dec: u.perSqft > 1 ? 0 : f.dec, suf:" / " + u.short};
   return {min:f.min, max:f.max, st:f.st, dec:f.dec, suf:f.suf || ""};
 }
+function bag(f){ return f.on === "plan" ? PLAN : S; }
 function areaScale(f, unit){
   const k = (AREA_UNITS[unit || S.areaUnit] || AREA_UNITS.sqft).perSqft;
   return f.area === "size" ? 1/k : f.area === "rate" ? k : 1;
@@ -1039,14 +1200,14 @@ function setVal(k, v, skipRender){          /* v arrives in the displayed unit *
   const f = F[k], L = lim(f);
   v = clamp(f, v);
   v = Math.round(v * Math.pow(10, L.dec+2)) / Math.pow(10, L.dec+2);
-  S[k] = toStore(f, v);
+  bag(f)[k] = toStore(f, v);
   syncField(k);
-  if(!skipRender) render();
+  if(!skipRender) rerender();
 }
 function syncField(k){
   const f = F[k], node = document.querySelector(`.field[data-k="${k}"]`);
   if(!node) return;
-  const L = lim(f), d = toDisp(f, S[k]);
+  const L = lim(f), d = toDisp(f, bag(f)[k]);
   const inp = node.querySelector("input.num"), rng = node.querySelector("input[type=range]");
   if(document.activeElement !== inp) inp.value = nf(d, L.dec);
   inp.setAttribute("aria-valuenow", d);
@@ -1068,15 +1229,15 @@ function wireField(f){
   rng.addEventListener("input", () => setVal(f.k, parseFloat(rng.value)));
 
   // typing
-  inp.addEventListener("focus", () => { inp.value = String(toDisp(f, S[f.k])); inp.select(); });
+  inp.addEventListener("focus", () => { inp.value = String(toDisp(f, bag(f)[f.k])); inp.select(); });
   inp.addEventListener("blur",  () => { commit(); syncField(f.k); });
   inp.addEventListener("keydown", e => {
     if(e.key === "Enter"){ commit(); inp.blur(); }
     else if(e.key === "ArrowUp" || e.key === "ArrowDown"){
       e.preventDefault();
       const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-      setVal(f.k, toDisp(f, S[f.k]) + step()*mult*(e.key==="ArrowUp"?1:-1));
-      inp.value = String(toDisp(f, S[f.k]));
+      setVal(f.k, toDisp(f, bag(f)[f.k]) + step()*mult*(e.key==="ArrowUp"?1:-1));
+      inp.value = String(toDisp(f, bag(f)[f.k]));
     }
   });
   function commit(){
@@ -1089,8 +1250,8 @@ function wireField(f){
   const onWheel = e => {
     e.preventDefault();
     const mult = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1);
-    setVal(f.k, toDisp(f, S[f.k]) - Math.sign(e.deltaY) * step() * mult);
-    if(document.activeElement === inp) inp.value = String(toDisp(f, S[f.k]));
+    setVal(f.k, toDisp(f, bag(f)[f.k]) - Math.sign(e.deltaY) * step() * mult);
+    if(document.activeElement === inp) inp.value = String(toDisp(f, bag(f)[f.k]));
   };
   inp.addEventListener("wheel", onWheel, {passive:false});
   lab.addEventListener("wheel", onWheel, {passive:false});
@@ -1099,7 +1260,7 @@ function wireField(f){
   [inp, lab].forEach(handle => {
     handle.addEventListener("pointerdown", e => {
       if(e.button !== 0) return;
-      const startX = e.clientX, startV = toDisp(f, S[f.k]);
+      const startX = e.clientX, startV = toDisp(f, bag(f)[f.k]);
       let moved = false;
       const isInput = handle === inp;
       const move = ev => {
@@ -1472,7 +1633,7 @@ function renderComps(m){
    ========================================================================== */
 function render(){
   const m = model();
-  FIELDS.forEach(f => syncField(f.k));
+  FIELDS.forEach(f => { if(f.on !== "plan") syncField(f.k); });
 
   // ---- hero ----
   document.getElementById("heroEquity").textContent = money(m.equity);
@@ -2111,8 +2272,313 @@ function showLoadedBanner(named){
   document.getElementById("dismissLoaded").addEventListener("click", () => bar.remove());
 }
 
+/* ==========================================================================
+   12. THE FIVE-YEAR PLAN
+   ========================================================================== */
+const STATUSES = [
+  {k:"pipeline", l:"Pipeline"},
+  {k:"offer",    l:"Under offer"},
+  {k:"owned",    l:"Owned"},
+  {k:"works",    l:"In works"},
+  {k:"sold",     l:"Sold"}
+];
+
+/* Month by month for five years. Capital is deployed as fast as it exists and
+   as fast as projects can be taken on; each one comes back after its build-to-
+   exit period carrying its return, and whatever share is reinvested goes
+   straight back out again. */
+function planSim(){
+  const MONTHS = 60;
+  const eq   = Math.max(1, PLAN.equityPerProj);
+  const dur  = Math.max(1, Math.round(PLAN.projectMonths));
+  const gap  = 12 / Math.max(1, PLAN.startsPerYear);
+  const ret  = PLAN.returnPct / 100;
+  const rein = PLAN.reinvestPct / 100;
+
+  let avail = PLAN.startCapital, lastStart = -1e9, drawn = 0;
+  const live = [], perMonth = [];
+
+  for(let m = 0; m < MONTHS; m++){
+    let starts = 0, profit = 0, back = 0;
+    for(let i = live.length - 1; i >= 0; i--){
+      if(live[i].end === m){
+        const p = eq * ret;
+        profit += p; back += eq + p;
+        avail += eq + p * rein;
+        drawn += p * (1 - rein);
+        live.splice(i, 1);
+      }
+    }
+    if(avail >= eq && (m - lastStart) >= gap - 1e-9){
+      live.push({end: m + dur});
+      avail -= eq; lastStart = m; starts = 1;
+    }
+    perMonth.push({m, starts, profit, back, avail, running: live.length, deployed: live.length * eq});
+  }
+
+  const years = [];
+  for(let y = 0; y < 5; y++){
+    const sl = perMonth.slice(y*12, y*12 + 12);
+    const last = sl[sl.length - 1] || {running:0, deployed:0, avail:0};
+    years.push({
+      y: y + 1,
+      starts:  sl.reduce((a,b) => a + b.starts, 0),
+      profit:  sl.reduce((a,b) => a + b.profit, 0),
+      running: last.running,
+      deployed: last.deployed,
+      idle:    last.avail
+    });
+  }
+  years.forEach((v,i) => {
+    v.cum = years.slice(0,i+1).reduce((a,b) => a + b.profit, 0);
+    v.avg = v.cum / (i+1);          /* profit lands in lumps; the run rate is the average */
+  });
+  const hit    = years.findIndex(v => v.profit >= PLAN.targetProfit);
+  const hitAvg = years.findIndex(v => v.avg    >= PLAN.targetProfit);
+  return {years, perMonth, drawn,
+          hitYear:    hit    < 0 ? null : hit + 1,
+          hitAvgYear: hitAvg < 0 ? null : hitAvg + 1,
+          avg5: years[4].cum / 5,
+          perProject: eq * (PLAN.returnPct/100),
+          stalled: PLAN.startCapital < eq};
+}
+
+function planStart(){ return new Date(PLAN.startDate + "T00:00:00"); }
+function monthsSinceStart(){
+  const a = planStart(), n = new Date();
+  let m = (n.getFullYear() - a.getFullYear()) * 12 + (n.getMonth() - a.getMonth());
+  if(n.getDate() < a.getDate()) m--;
+  return m;
+}
+function daysUntilStart(){
+  return Math.ceil((planStart() - new Date()) / 86400000);
+}
+function yearLabel(i){
+  const a = planStart(), from = new Date(a.getFullYear() + i, a.getMonth(), 1);
+  const to = new Date(a.getFullYear() + i + 1, a.getMonth() - 1, 1);
+  const f = d => d.toLocaleDateString(undefined, {month:"short", year:"2-digit"});
+  return `${f(from)} – ${f(to)}`;
+}
+
+/* What has actually happened, as opposed to what is planned. Every property on
+   the shelf carries its own cash in and cash back; a property nobody has spent
+   anything on contributes nothing rather than being guessed at. */
+function actuals(){
+  let invested = 0, returned = 0;
+  const byStatus = {};
+  STORE.projects.forEach(p => {
+    const st = p.s || {};
+    invested += +st.actualIn  || 0;
+    returned += +st.actualOut || 0;
+    const k = st.status || "pipeline";
+    byStatus[k] = (byStatus[k] || 0) + 1;
+  });
+  return {invested, returned, net: returned - invested,
+          roi: invested > 0 ? (returned - invested) / invested : null,
+          byStatus, count: STORE.projects.length};
+}
+/* ---------- the plan chart ---------- */
+function drawPlanChart(sim){
+  const svg = document.getElementById("planChart");
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 780, H = 250;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {t:24, r:16, b:44, l:70};
+  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+
+  const target = PLAN.targetProfit;
+  const hi0 = Math.max(target, ...sim.years.map(v => v.profit), 1);
+  const ticks = niceTicks(0, hi0, 4);
+  const hi = Math.max(hi0, ticks[ticks.length-1]);
+  const Y = v => pad.t + ih - (v/(hi||1)) * ih;
+  const band = iw / sim.years.length;
+  const bw = Math.min(24, band * 0.5);
+
+  ticks.forEach(t => {
+    el("line",{x1:pad.l,x2:W-pad.r,y1:Y(t),y2:Y(t),stroke:"var(--grid)","stroke-width":1},svg);
+    el("text",{x:pad.l-9,y:Y(t)+4,"text-anchor":"end",fill:"var(--muted)","font-size":11},svg)
+      .textContent = moneyC(t);
+  });
+  el("line",{x1:pad.l,x2:W-pad.r,y1:Y(0),y2:Y(0),stroke:"var(--axis)","stroke-width":1},svg);
+
+  sim.years.forEach((v,i) => {
+    const cx = pad.l + band*i + band/2;
+    const h = Math.max(1, Y(0) - Y(v.profit));
+    const hits = v.profit >= target;
+    el("rect",{x:cx-bw/2, y:Y(v.profit), width:bw, height:h, rx:4,
+               fill: hits ? "var(--s1)" : "var(--s1)", "fill-opacity": hits ? 1 : 0.42},svg);
+    el("text",{x:cx, y:H-26, "text-anchor":"middle", fill:"var(--muted)","font-size":11},svg)
+      .textContent = "Year " + v.y;
+    el("text",{x:cx, y:H-11, "text-anchor":"middle", fill:"var(--muted)","font-size":10},svg)
+      .textContent = yearLabel(i);
+    if(v.profit > 0)
+      el("text",{x:cx, y:Y(v.profit)-7, "text-anchor":"middle",
+                 fill: hits ? "var(--ink)" : "var(--ink-2)", "font-size":11.5,
+                 "font-weight": hits ? 620 : 500},svg).textContent = moneyC(v.profit);
+
+    const hit = el("rect",{x:pad.l+band*i, y:pad.t, width:band, height:ih, fill:"transparent"},svg);
+    hit.style.cursor = "crosshair";
+    hit.addEventListener("mousemove", e => showTip(e,
+      `<b>Year ${v.y} · ${yearLabel(i)}</b>
+       <div>Projects started <em>${v.starts}</em></div>
+       <div>Running at year end <em>${v.running}</em></div>
+       <div>Capital deployed <em>${money(v.deployed)}</em></div>
+       <div>Profit realised <em>${money(v.profit)}</em></div>
+       <div>Cumulative <em>${money(v.cum)}</em></div>`));
+    hit.addEventListener("mouseleave", hideTip);
+  });
+
+  /* the target the whole plan is aimed at */
+  el("line",{x1:pad.l, x2:W-pad.r, y1:Y(target), y2:Y(target),
+             stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round"},svg);
+  el("text",{x:pad.l+4, y:Y(target)-7, fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
+    .textContent = `${moneyC(target)} a year`;
+}
+
+/* ---------- the portfolio, as it really stands ---------- */
+function renderPortfolio(){
+  const tb = document.querySelector("#portTable tbody");
+  const items = STORE.projects.slice().sort((a,b) => b.updated - a.updated);
+  document.getElementById("portCount").textContent =
+    items.length === 1 ? "1 property" : `${items.length} properties`;
+
+  tb.innerHTML = items.map(p => {
+    const st = p.s || {};
+    const inn = +st.actualIn || 0, out = +st.actualOut || 0;
+    const net = out - inn;
+    return `<tr data-id="${p.id}">
+      <td style="font-family:var(--body)">${esc(st.name || "Untitled property")}</td>
+      <td><select data-f="status">${STATUSES.map(o =>
+        `<option value="${o.k}"${(st.status||"pipeline") === o.k ? " selected" : ""}>${o.l}</option>`).join("")}</select></td>
+      <td><input data-f="actualIn" value="${inn || ""}" placeholder="0"></td>
+      <td><input data-f="actualOut" value="${out || ""}" placeholder="0"></td>
+      <td style="font-weight:620" class="${net > 0 ? "pos" : net < 0 ? "neg" : ""}">${inn||out ? money(net) : "—"}</td>
+      <td><button class="openlink" data-open="${p.id}">Open</button></td>
+    </tr>`;
+  }).join("");
+
+  const write = (id, f, raw) => {
+    const p = STORE.projects.find(x => x.id === id);
+    if(!p) return;
+    const v = f === "status" ? raw : (parseFloat(String(raw).replace(/[^0-9.\-]/g,"")) || 0);
+    p.s[f] = v;
+    if(p.id === STORE.activeId) S[f] = v;   /* S is a copy; keep the open deal in step */
+    p.updated = Date.now();
+    saveStore(); renderHome();
+  };
+  tb.querySelectorAll("input,select").forEach(ctl => ctl.addEventListener("change", e =>
+    write(e.target.closest("tr").dataset.id, e.target.dataset.f, e.target.value)));
+  tb.querySelectorAll("[data-open]").forEach(b =>
+    b.addEventListener("click", () => openProject(b.dataset.open)));
+}
+
+/* ---------- the plan page ---------- */
+function renderHome(){
+  const sim = planSim(), a = actuals();
+  const ccySave = S.ccy;
+  S.ccy = PLAN.ccy;                       /* money() reads the live S */
+  document.querySelectorAll("#planCcySeg button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.pccy === PLAN.ccy)));
+
+  document.getElementById("planTarget").textContent = moneyC(PLAN.targetProfit) + " a year";
+
+  const hitEl = document.getElementById("planHit");
+  if(sim.stalled){ hitEl.textContent = "never"; hitEl.className = "v2 neg"; }
+  else if(sim.hitAvgYear){ hitEl.textContent = "Year " + sim.hitAvgYear; hitEl.className = "v2 pos"; }
+  else { hitEl.textContent = "not in 5 yrs"; hitEl.className = "v2 neg"; }
+  const avgEl = document.getElementById("planAvg");
+  avgEl.textContent = moneyC(sim.avg5);
+  avgEl.className = "v2 " + (sim.avg5 >= PLAN.targetProfit ? "pos" : "neg");
+  document.getElementById("planPer").textContent = moneyC(sim.perProject);
+
+  /* the headline is whichever is true: running yet, or counting down to it */
+  const months = monthsSinceStart();
+  const best = Math.max(0, ...sim.years.map(v => v.profit));
+  if(months < 0){
+    document.getElementById("heroLab").textContent = "The plan starts";
+    document.getElementById("planHero").textContent = daysUntilStart() + " days";
+    document.getElementById("planHeroNote").textContent =
+      `1 October 2026. On these assumptions the first project completes in month ${PLAN.projectMonths}, ` +
+      `and the run rate reaches ${moneyC(PLAN.targetProfit)} a year ` +
+      (sim.hitAvgYear ? `in year ${sim.hitAvgYear} — ${yearLabel(sim.hitAvgYear-1)}.` : "not within five years.");
+  } else {
+    document.getElementById("heroLab").textContent = "Net returned so far";
+    document.getElementById("planHero").textContent = money(a.net);
+    document.getElementById("planHeroNote").textContent =
+      `${moneyC(a.returned)} back on ${moneyC(a.invested)} invested across ${a.count} ` +
+      `${a.count === 1 ? "property" : "properties"}` +
+      (a.roi === null ? "" : ` · ${pct(a.roi,0)} return so far`);
+  }
+
+  document.getElementById("acInv").textContent = a.invested ? moneyC(a.invested) : "—";
+  document.getElementById("acInvD").textContent = a.invested
+    ? `across ${a.count} ${a.count === 1 ? "property" : "properties"}` : "nothing recorded yet";
+  document.getElementById("acRet").textContent = a.returned ? moneyC(a.returned) : "—";
+  document.getElementById("acRetD").textContent = a.returned
+    ? `${a.byStatus.sold || 0} sold` : "no exits yet";
+  const netEl = document.getElementById("acNet");
+  netEl.textContent = (a.invested || a.returned) ? money(a.net) : "—";
+  netEl.className = "v " + (a.net > 0 ? "pos" : a.net < 0 ? "neg" : "");
+  document.getElementById("acNetD").textContent =
+    a.roi === null ? "needs cash in and cash back" : `${pct(a.roi,0)} against ${PLAN.returnPct}% target`;
+  document.getElementById("acMon").textContent = months < 0 ? "not started" : months;
+  document.getElementById("acMonD").textContent = months < 0
+    ? `starts in ${daysUntilStart()} days`
+    : `since 1 Oct 2026 · month ${months + 1} of 60`;
+
+  document.getElementById("rampSub").textContent =
+    `${PLAN.projectMonths} months a project · ${PLAN.reinvestPct}% of profit reinvested`;
+  document.getElementById("rampLead").textContent = sim.stalled
+    ? ""
+    : sim.hitYear
+      ? `At ${moneyC(PLAN.equityPerProj)} of equity a project and a ${PLAN.returnPct}% return, one completed ` +
+        `project makes ${moneyC(sim.perProject)} — ${(sim.perProject/PLAN.targetProfit).toFixed(1)}× the annual target on its own. ` +
+        `So the question is cadence, not count. Starting with ${moneyC(PLAN.startCapital)} you can carry ` +
+        `${Math.floor(PLAN.startCapital/PLAN.equityPerProj)} at once, and because each takes ${PLAN.projectMonths} months, ` +
+        `profit lands in lumps rather than evenly — the run rate reaches ${moneyC(PLAN.targetProfit)} in year ${sim.hitAvgYear}. ` +
+        `Set the starting capital to your real figure; it drives all of this.`
+      : `On these assumptions profit never clears ${moneyC(PLAN.targetProfit)} in a single year within five years. ` +
+        `The levers are the capital you start with, how long a project takes, and how many you can run at once.`;
+
+  const stall = document.querySelector(".stall");
+  if(stall) stall.remove();
+  if(sim.stalled){
+    const d = document.createElement("div");
+    d.className = "stall";
+    d.innerHTML = `<b>Nothing can start.</b> Each project needs ${moneyC(PLAN.equityPerProj)} of equity but the plan ` +
+      `begins with ${moneyC(PLAN.startCapital)}. Raise the starting capital or take on smaller projects.`;
+    document.getElementById("rampLead").after(d);
+  }
+
+  document.querySelector("#planTable tbody").innerHTML = sim.years.map((v,i) => `
+    <tr${v.avg >= PLAN.targetProfit ? ' class="exit"' : ""}>
+      <td>Year ${v.y}</td>
+      <td style="font-family:var(--body);color:var(--muted)">${yearLabel(i)}</td>
+      <td>${v.starts}</td>
+      <td>${v.running}</td>
+      <td>${moneyC(v.deployed)}</td>
+      <td class="${v.profit >= PLAN.targetProfit ? "pos" : ""}">${money(v.profit)}</td>
+      <td>${money(v.cum)}</td>
+      <td class="${v.avg >= PLAN.targetProfit ? "pos" : "neg"}">${money(v.avg)}</td>
+    </tr>`).join("");
+
+  FIELDS.forEach(f => { if(f.on === "plan") syncField(f.k); });
+  drawPlanChart(sim);
+  renderPortfolio();
+  S.ccy = ccySave;
+}
 /* ---------- boot ---------- */
-document.getElementById("backBtn").addEventListener("click", () => { save(); location.hash = "#/"; });
+document.getElementById("planCcySeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  PLAN.ccy = b.dataset.pccy; saveStore(); renderHome();
+});
+document.getElementById("mainnav").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  if(VIEW === "model") save();
+  location.hash = b.dataset.go;
+  if((location.hash || "#/") === b.dataset.go) route();   // same hash fires no event
+});
 document.getElementById("newProjBtn").addEventListener("click", () => {
   const p = blankProject();
   STORE.projects.push(p); saveStore();

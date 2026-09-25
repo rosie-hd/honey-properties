@@ -1,6 +1,28 @@
 # Honey Properties
 
-A single-file underwriting dashboard for buy-and-fit-out property deals.
+A single-file underwriting dashboard for buy-and-fit-out property deals, and the
+five-year plan they add up to.
+
+## Pages
+
+- **Plan** — the target, the ramp towards it, and where the money actually is today.
+- **Properties** — every deal on the shelf; click one to open its model.
+
+## The plan
+
+The target is a net profit a year, reached as fast as the capital allows. With a 100%
+return, profit on a project equals the equity put into it — so the target does not set
+the pace. What sets it is the capital you start with, how long a project takes start to
+exit, how many you can run at once, and how much profit goes back in. Those four are on
+the page and everything re-simulates as you move them.
+
+The simulation runs month by month for five years: capital is deployed as fast as it
+exists and as fast as projects can be taken on, each returns after its period, and the
+reinvested share goes straight back out. Because a project takes years, profit lands in
+lumps rather than evenly, so the plan is judged on the **run rate** — cumulative profit
+over years elapsed — not on whether one lucky year clears the bar.
+
+Actual cash in and cash back are recorded per property and drive the totals.
 
 Open `index.html` in any browser — there is no build step and no server.
 
