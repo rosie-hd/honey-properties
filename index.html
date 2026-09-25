@@ -291,6 +291,19 @@ details.imp summary:hover{color:var(--ink)}
   background:var(--surface-2);border-radius:9px;padding:14px;margin:2px 0 8px;
 }
 .miscgrid .field{margin-bottom:0}
+.seg.tiny{padding:1px;border-radius:6px;margin-top:2px}
+.seg.tiny button{font-size:10.5px;padding:3px 7px;border-radius:5px}
+.dealwarn{
+  display:flex;gap:9px;align-items:flex-start;border-radius:9px;padding:10px 13px;
+  font-size:12.5px;line-height:1.55;margin-bottom:12px;
+  background:color-mix(in srgb,var(--crit) 10%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--crit) 40%,transparent);color:var(--ink-2);
+}
+.dealwarn.warn{background:color-mix(in srgb,var(--warn) 14%,var(--surface));
+  border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.dealwarn b{color:var(--ink);font-weight:620}
+.dealwarn .mark{flex:none;font-weight:700;color:var(--crit)}
+.dealwarn.warn .mark{color:var(--honey)}
 .disclose{
   background:none;border:none;padding:0;font:inherit;font-size:11.5px;color:var(--honey);
   cursor:pointer;text-decoration:underline;text-underline-offset:2px;
@@ -459,7 +472,10 @@ body.on-projects .model-only{display:none !important}
 
   <div class="card">
     <h2>Buy at the bottom, sell at the top</h2>
-    <p class="sub">What the area trades at, where you buy into it, and where you sell out of it.</p>
+    <p class="sub">What the area trades at, where you buy into it, and where you sell out of it.
+    Set the range for the kind of property you are actually looking at — a 28,000 sq ft
+    commercial block and an 8,000 sq ft heritage house trade in completely different bands.</p>
+    <div id="dealWarn"></div>
     <svg id="spreadChart" class="chart" role="img" aria-label="Where the purchase and target sale price sit in the local range"></svg>
     <div class="spread-row"><div id="d-spread"></div></div>
   </div>
@@ -521,7 +537,10 @@ body.on-projects .model-only{display:none !important}
       </li>
       <li class="step">
         <span class="stepn">6</span>
-        <span class="steplab"><b>Sale price</b><em>at the top of the range</em></span>
+        <span class="steplab"><b>Sale price</b>
+          <em><span class="seg tiny" id="saleBasisSeg" role="group" aria-label="How the sale price is set">
+            <button data-basis="psf" aria-pressed="true">a fixed rate</button><button data-basis="uplift" aria-pressed="false">an uplift on cost</button>
+          </span></em></span>
         <span class="stepf" id="d-target"></span>
         <span class="stepv" id="vSale1">—</span>
       </li>
@@ -983,6 +1002,8 @@ const DEAL_DEFAULTS = {
   spreadLow:   175,
   spreadHigh:  460,
   targetPsf:   450,
+  saleBasis:  "psf",
+  upliftPct:   100,
   ltv:         75,
   rate:        8,
   months:      18,
@@ -1006,13 +1027,18 @@ const MISC_KEYS = ["cSdlt","cLegal","cSurvey","cAgent","cValuation","cArrange","
 function dealCalc(){
   const d = DEAL;
   const misc = MISC_KEYS.reduce((a,k) => a + (+d[k] || 0), 0);
+  const buyPsf = d.purchase / Math.max(1, d.sqft);
+  /* A fixed sale rate stops making sense the moment the floor area moves: the
+     purchase rate shifts and the sale rate does not. Setting the sale as an
+     uplift on what you paid keeps the two tied together. */
+  const targetPsf = d.saleBasis === "uplift" ? buyPsf * (1 + d.upliftPct/100) : d.targetPsf;
   const loan     = d.purchase * d.ltv/100;
   const deposit  = d.purchase - loan;
   const interest = loan * (d.rate/100) * (d.months/12);
 
   const cost1  = d.purchase + misc + d.reno + interest;
   const cash1  = cost1 - loan;
-  const sale1  = d.targetPsf * d.sqft;
+  const sale1  = targetPsf * d.sqft;
   const sCost1 = sale1 * d.saleCostPct/100;
   const net1   = sale1 - sCost1 - loan;
   const profit1 = net1 - cash1;
@@ -1021,13 +1047,13 @@ function dealCalc(){
   const sqft2   = d.sqft + d.addSqft;
   const cost2   = cost1 + devCost;
   const cash2   = cash1 + devCost;
-  const sale2   = d.targetPsf * sqft2;
+  const sale2   = targetPsf * sqft2;
   const sCost2  = sale2 * d.saleCostPct/100;
   const net2    = sale2 - sCost2 - loan;
   const profit2 = net2 - cash2;
 
-  return {misc, loan, deposit, interest,
-    purchasePsf: d.purchase / Math.max(1,d.sqft),
+  return {misc, loan, deposit, interest, targetPsf,
+    purchasePsf: buyPsf,
     renoPsf:     d.reno / Math.max(1,d.sqft),
     cost1, cash1, sale1, sCost1, net1, profit1,
     allIn1: cost1 / Math.max(1,d.sqft),
@@ -1036,7 +1062,7 @@ function dealCalc(){
     allIn2: cost2 / Math.max(1,sqft2),
     roe2: cash2 > 0 ? profit2/cash2 : 0,
     uplift: profit2 - profit1,
-    marginPsf: d.targetPsf - d.devPsf};
+    marginPsf: targetPsf - d.devPsf};
 }
 
 function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1270,9 +1296,10 @@ const FIELDS = [
 
   {k:"purchase_d",  l:"Purchase price",      min:250000, max:30000000, st:50000, pre:"ccy", dec:0, g:"d-price", on:"deal", src:"purchase", compact:1},
   {k:"sqft",        l:"Floor area",          min:500,    max:500000,  st:250,   suf:" sq ft", dec:0, g:"d-area", on:"deal", compact:1},
-  {k:"spreadLow",   l:"Bottom of the range", min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
-  {k:"spreadHigh",  l:"Top of the range",    min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
-  {k:"targetPsf",   l:"Target sale price",   min:10,     max:3000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-target", on:"deal", compact:1},
+  {k:"spreadLow",   l:"Bottom of the range", min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
+  {k:"spreadHigh",  l:"Top of the range",    min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
+  {k:"targetPsf",   l:"Target sale price",   min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-target", on:"deal", compact:1},
+  {k:"upliftPct",   l:"Uplift on what you paid", min:0,  max:500,     st:5,     suf:"%", dec:0, g:"d-target", on:"deal", compact:1},
   {k:"ltv",         l:"Loan",                min:0,      max:95,      st:1,     suf:"%",   dec:0, g:"d-fin",  on:"deal", compact:1},
   {k:"rate",        l:"Interest rate",       min:0,      max:20,      st:0.25,  suf:"%",   dec:2, g:"d-fin",  on:"deal", compact:1},
   {k:"months",      l:"Months to sale",      min:1,      max:72,      st:1,     suf:" months", dec:0, g:"d-fin", on:"deal", compact:1},
@@ -2873,8 +2900,8 @@ function drawSpread(){
   const iw = W - pad.l - pad.r;
   const c = dealCalc(), d = DEAL;
 
-  const lo = Math.min(d.spreadLow, c.purchasePsf, d.targetPsf);
-  const hi = Math.max(d.spreadHigh, c.purchasePsf, d.targetPsf);
+  const lo = Math.min(d.spreadLow, c.purchasePsf, c.targetPsf);
+  const hi = Math.max(d.spreadHigh, c.purchasePsf, c.targetPsf);
   const padv = (hi - lo) * 0.14 || 10;
   const a = lo - padv, b = hi + padv;
   const X = v => pad.l + (v - a) / ((b - a) || 1) * iw;
@@ -2894,15 +2921,15 @@ function drawSpread(){
   });
 
   /* the journey from where you buy to where you sell */
-  const bx = X(c.purchasePsf), sx = X(d.targetPsf);
-  el("path",{d:`M${bx} ${y-30} L${sx} ${y-30}`, stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round"},svg);
-  el("path",{d:`M${sx-7} ${y-35} L${sx} ${y-30} L${sx-7} ${y-25}`, fill:"none",
-             stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+  const bx = X(c.purchasePsf), sx = X(c.targetPsf);
+  el("path",{d:`M${bx} ${y-30} L${sx} ${y-30}`, stroke: c.targetPsf >= c.purchasePsf ? "var(--s2)" : "var(--crit)","stroke-width":2,"stroke-linecap":"round"},svg);
+  el("path",{d:`M${sx + (c.targetPsf >= c.purchasePsf ? -7 : 7)} ${y-35} L${sx} ${y-30} L${sx + (c.targetPsf >= c.purchasePsf ? -7 : 7)} ${y-25}`, fill:"none",
+             stroke: c.targetPsf >= c.purchasePsf ? "var(--s2)" : "var(--crit)","stroke-width":2,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
   el("text",{x:(bx+sx)/2, y:y-39, "text-anchor":"middle", fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
-    .textContent = `+${C()}${nf(DEAL.targetPsf - c.purchasePsf,0)} a sq ft`;
+    .textContent = `${c.targetPsf >= c.purchasePsf ? "+" : ""}${C()}${nf(c.targetPsf - c.purchasePsf,0)} a sq ft`;
 
   [[bx, c.purchasePsf, "You buy here", "var(--s2)"],
-   [sx, DEAL.targetPsf, "You sell here", "var(--good)"]].forEach(([x,v,lab,col],i) => {
+   [sx, c.targetPsf, "You sell here", c.targetPsf > c.purchasePsf ? "var(--good)" : "var(--crit)"]].forEach(([x,v,lab,col],i) => {
     el("circle",{cx:x, cy:y, r:7, fill:col, stroke:"var(--surface)","stroke-width":3},svg);
     el("text",{x, y:y-52, "text-anchor":"middle", fill:"var(--ink)","font-size":12,"font-weight":640},svg)
       .textContent = `${C()}${nf(v,0)}/sf`;
@@ -2910,6 +2937,42 @@ function drawSpread(){
   });
 }
 
+/* A model that quietly returns a confident negative number is worse than one
+   that stops and says what stopped making sense. These are the ways the inputs
+   can contradict each other, in the order they matter. */
+function dealWarnings(c){
+  const d = DEAL, w = [];
+  const buy = Math.round(c.purchasePsf), sell = Math.round(c.targetPsf);
+
+  if(buy > d.spreadHigh)
+    w.push({level:"bad", html:
+      `<b>You are buying above the top of the range.</b> ${money(d.purchase)} over ${nf(d.sqft,0)} sq ft is ` +
+      `${C()}${nf(buy,0)} a sq ft, but this area is set to top out at ${C()}${nf(d.spreadHigh,0)}. ` +
+      `Either the range belongs to a different kind of property than the one you are pricing, or the building is expensive for what it is.`});
+  else if(buy > (d.spreadLow + d.spreadHigh)/2)
+    w.push({level:"warn", html:
+      `<b>You are buying in the top half of the range.</b> ${C()}${nf(buy,0)} a sq ft against a band of ` +
+      `${C()}${nf(d.spreadLow,0)}–${C()}${nf(d.spreadHigh,0)}. The whole thesis is buying at the bottom.`});
+
+  if(sell <= buy)
+    w.push({level:"bad", html:
+      `<b>You are selling for less per sq ft than you paid.</b> ${C()}${nf(sell,0)} out against ` +
+      `${C()}${nf(buy,0)} in. Nothing else in the model can rescue that.`});
+
+  if(c.sale1 < c.cost1)
+    w.push({level:"bad", html:
+      `<b>The sale does not cover the cost.</b> ${money(c.sale1)} in, ${money(c.cost1)} spent — ` +
+      `a shortfall of ${money(c.cost1 - c.sale1)} before you have repaid a penny of the loan.`});
+
+  if(c.renoPsf > c.purchasePsf * 0.6 && c.renoPsf > 0)
+    w.push({level:"warn", html:
+      `<b>The works are large for the area you get to sell.</b> ${money(d.reno)} over ${nf(d.sqft,0)} sq ft is ` +
+      `${C()}${nf(c.renoPsf,0)} a sq ft of renovation against ${C()}${nf(c.purchasePsf,0)} a sq ft of building. ` +
+      `The budget is a fixed sum, so shrinking the floor area does not shrink it — it just raises your all-in cost to ` +
+      `${C()}${nf(c.allIn1,0)} a sq ft.`});
+
+  return w;
+}
 function renderDeal(){
   const ccySave = S.ccy; S.ccy = DEAL.ccy;
   FIELDS.forEach(f => { if(f.on === "deal") syncField(f.k); });
@@ -2918,7 +2981,7 @@ function renderDeal(){
 
   set("dProfit", money(c.profit1));
   set("dProfitNote",
-    `${money(d.purchase)} building, ${moneyC(d.reno)} of works, sold at ${C()}${nf(d.targetPsf,0)} a sq ft ` +
+    `${money(d.purchase)} building, ${moneyC(d.reno)} of works, sold at ${C()}${nf(c.targetPsf,0)} a sq ft ` +
     `after ${d.months} months`);
   set("dCash", moneyC(c.cash1));
   const roeEl = document.getElementById("dRoe");
@@ -2946,13 +3009,13 @@ function renderDeal(){
 
   set("addLead",
     `Building ${nf(d.addSqft,0)} sq ft at ${C()}${nf(d.devPsf,0)} a sq ft and selling it at ` +
-    `${C()}${nf(d.targetPsf,0)} leaves ${C()}${nf(c.marginPsf,0)} a sq ft of margin — ` +
+    `${C()}${nf(c.targetPsf,0)} leaves ${C()}${nf(c.marginPsf,0)} a sq ft of margin — ` +
     `${money(c.uplift)} more profit on this deal.`);
   set("vNewArea", `${nf(c.sqft2,0)} sq ft in total`);
   set("vDevCost", money(c.devCost));
   set("vCash2", money(c.cash2));
   set("vSale2", money(c.sale2));
-  set("vSale2Note", `${nf(c.sqft2,0)} sq ft at ${C()}${nf(d.targetPsf,0)}`);
+  set("vSale2Note", `${nf(c.sqft2,0)} sq ft at ${C()}${nf(c.targetPsf,0)}`);
   set("vSale2Psf", `${C()}${nf(c.allIn2,0)}/sf all in`);
   set("vProfit2", money(c.profit2));
   set("vProfit2Note", `${money(c.uplift)} more than without the extra area`);
@@ -2963,10 +3026,31 @@ function renderDeal(){
     if(n) n.className = "derived big " + ((i ? c.profit2 : c.profit1) >= 0 ? "pos" : "neg");
   });
 
+  /* show the target rate when it is derived, and swap which control is on screen */
+  document.querySelector('.field[data-k="targetPsf"]').style.display = d.saleBasis === "psf" ? "" : "none";
+  document.querySelector('.field[data-k="upliftPct"]').style.display = d.saleBasis === "uplift" ? "" : "none";
+  document.querySelectorAll("#saleBasisSeg button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.basis === d.saleBasis)));
+  if(d.saleBasis === "uplift") set("vSale1", `${money(c.sale1)} · ${C()}${nf(c.targetPsf,0)}/sf`);
+
+  const warns = dealWarnings(c);
+  document.getElementById("dealWarn").innerHTML = warns.map(x =>
+    `<div class="dealwarn ${x.level === "warn" ? "warn" : ""}"><span class="mark">${x.level === "warn" ? "!" : "✕"}</span><span>${x.html}</span></div>`).join("");
+
   drawSpread();
   S.ccy = ccySave;
 }
 /* ---------- boot ---------- */
+document.getElementById("saleBasisSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b || b.dataset.basis === DEAL.saleBasis) return;
+  const c = dealCalc();
+  /* carry the rate across so switching basis does not jolt the deal */
+  if(b.dataset.basis === "uplift" && c.purchasePsf > 0)
+    DEAL.upliftPct = clamp(F.upliftPct, Math.round((c.targetPsf/c.purchasePsf - 1) * 100));
+  else DEAL.targetPsf = clamp(F.targetPsf, Math.round(c.targetPsf));
+  DEAL.saleBasis = b.dataset.basis;
+  saveStore(); renderDeal();
+});
 document.getElementById("miscToggle").addEventListener("click", e => {
   const panel = document.getElementById("miscPanel");
   panel.hidden = !panel.hidden;
