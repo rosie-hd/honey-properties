@@ -571,9 +571,9 @@ body.on-projects .model-only{display:none !important}
       </li>
       <li class="step">
         <span class="stepn">9</span>
-        <span class="steplab"><b>Cost to build it</b><em>all-in construction rate</em></span>
+        <span class="steplab"><b>Cost to build it</b><em>all in, including fees</em></span>
         <span class="stepf" id="d-devpsf"></span>
-        <span class="stepv" id="vDevCost">—</span>
+        <span class="stepv" id="vDevPsf">—</span>
       </li>
       <li class="step subtotal">
         <span class="stepn"></span>
@@ -1007,10 +1007,10 @@ const DEAL_DEFAULTS = {
   ltv:         75,
   rate:        8,
   months:      18,
-  reno:        3000000,
+  reno:        1500000,
   saleCostPct: 1.5,
   addSqft:     6000,
-  devPsf:      250,
+  devCost:     500000,
   /* the misc line, itemised */
   cSdlt:       239500,
   cLegal:      25000,
@@ -1043,7 +1043,8 @@ function dealCalc(){
   const net1   = sale1 - sCost1 - loan;
   const profit1 = net1 - cash1;
 
-  const devCost = d.addSqft * d.devPsf;
+  const devCost = +d.devCost || 0;
+  const devPsf  = d.addSqft > 0 ? devCost / d.addSqft : 0;
   const sqft2   = d.sqft + d.addSqft;
   const cost2   = cost1 + devCost;
   const cash2   = cash1 + devCost;
@@ -1058,11 +1059,11 @@ function dealCalc(){
     cost1, cash1, sale1, sCost1, net1, profit1,
     allIn1: cost1 / Math.max(1,d.sqft),
     roe1: cash1 > 0 ? profit1/cash1 : 0,
-    devCost, sqft2, cost2, cash2, sale2, sCost2, net2, profit2,
+    devCost, devPsf, sqft2, cost2, cash2, sale2, sCost2, net2, profit2,
     allIn2: cost2 / Math.max(1,sqft2),
     roe2: cash2 > 0 ? profit2/cash2 : 0,
     uplift: profit2 - profit1,
-    marginPsf: targetPsf - d.devPsf};
+    marginPsf: targetPsf - devPsf};
 }
 
 function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1078,7 +1079,10 @@ function blankProject(seed){
 function loadStore(){
   try{
     const o = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
-    if(o && Array.isArray(o.projects) && o.projects.length) STORE = o;
+    /* adopt the store even with no properties in it — the plan and the worked
+       deal live here too, and dropping them because the shelf is empty loses
+       settings that have nothing to do with the shelf */
+    if(o && Array.isArray(o.projects)) STORE = o;
   }catch(e){}
   if(!STORE.projects.length){
     /* carry the single deal this browser already held into the new shelf,
@@ -1306,7 +1310,7 @@ const FIELDS = [
   {k:"reno",        l:"Renovation budget",   min:0,      max:20000000,st:25000, pre:"ccy", dec:0, g:"d-reno", on:"deal", compact:1},
   {k:"saleCostPct", l:"Selling costs",       min:0,      max:10,      st:0.25,  suf:"%",   dec:2, g:"d-salec", on:"deal", compact:1},
   {k:"addSqft",     l:"Extra area to build", min:0,      max:200000,  st:250,   suf:" sq ft", dec:0, g:"d-addsf", on:"deal", compact:1},
-  {k:"devPsf",      l:"Build cost",          min:0,      max:2000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-devpsf", on:"deal", compact:1},
+  {k:"devCost",     l:"Cost to build it",    min:0,      max:20000000,st:10000, pre:"ccy", dec:0, g:"d-devpsf", on:"deal", compact:1},
   {k:"cSdlt",       l:"Stamp duty",          min:0, max:5000000, st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
   {k:"cLegal",      l:"Legal fees",          min:0, max:500000,  st:500, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
   {k:"cSurvey",     l:"Building survey",     min:0, max:200000,  st:250, pre:"ccy", dec:0, g:"d-misc", on:"deal", compact:1},
@@ -2556,6 +2560,18 @@ function parseQueryParams(){
 
   /* modes are read first: how the area is measured decides what the area
      figure is allowed to be */
+  /* d_<field> writes the worked example on the front page */
+  FIELDS.filter(f => f.on === "deal").forEach(f => {
+    const raw = q.get("d_" + f.k);
+    if(raw === null) return;
+    const v = parseFloat(raw.replace(/[^0-9.\-]/g,""));
+    if(!isFinite(v)) return;
+    DEAL[fkey(f)] = clamp(f, v);
+    named.push("worked deal: " + f.l.toLowerCase());
+  });
+  ["saleBasis"].forEach(k => { const v = q.get("d_" + k);
+    if(v && ["psf","uplift"].includes(v)) DEAL[k] = v; });
+
   Object.keys(MODE_PARAMS).forEach(k => {
     const v = q.get(k);
     if(v && MODE_PARAMS[k].includes(v)) seed[k] = v;
@@ -2971,6 +2987,12 @@ function dealWarnings(c){
       `The budget is a fixed sum, so shrinking the floor area does not shrink it — it just raises your all-in cost to ` +
       `${C()}${nf(c.allIn1,0)} a sq ft.`});
 
+  if(d.addSqft > 0 && c.devPsf > 0 && c.devPsf < 150)
+    w.push({level:"warn", html:
+      `<b>That build rate looks low.</b> ${money(c.devCost)} for ${nf(d.addSqft,0)} sq ft is ` +
+      `${C()}${nf(c.devPsf,0)} a sq ft. New build and extensions rarely come in under ${C()}200 a sq ft all in — ` +
+      `either the budget buys less area than that, or there is a cost missing.`});
+
   return w;
 }
 function renderDeal(){
@@ -3008,11 +3030,12 @@ function renderDeal(){
   set("vRoe1", pct(c.roe1,0) + " on cash");
 
   set("addLead",
-    `Building ${nf(d.addSqft,0)} sq ft at ${C()}${nf(d.devPsf,0)} a sq ft and selling it at ` +
+    `Building ${nf(d.addSqft,0)} sq ft for ${money(c.devCost)} — ${C()}${nf(c.devPsf,0)} a sq ft — and selling it at ` +
     `${C()}${nf(c.targetPsf,0)} leaves ${C()}${nf(c.marginPsf,0)} a sq ft of margin — ` +
     `${money(c.uplift)} more profit on this deal.`);
   set("vNewArea", `${nf(c.sqft2,0)} sq ft in total`);
-  set("vDevCost", money(c.devCost));
+  set("vDevPsf", DEAL.addSqft > 0 ? `${C()}${nf(c.devPsf,0)}/sf` : "—");
+  set("vDevPsf", c.addSqft <= 0 ? "—" : `${C()}${nf(c.devPsf,0)}/sf`);
   set("vCash2", money(c.cash2));
   set("vSale2", money(c.sale2));
   set("vSale2Note", `${nf(c.sqft2,0)} sq ft at ${C()}${nf(c.targetPsf,0)}`);
@@ -3080,7 +3103,13 @@ addEventListener("hashchange", route);
   buildFields();
 
   const {seed, named} = parseQueryParams();
-  if(named.length){
+  const dealOnly = named.length && named.every(n => n.startsWith("worked deal:"));
+  if(dealOnly){
+    saveStore();
+    history.replaceState(null, "", location.pathname + "#/");
+    route();
+    showLoadedBanner(named);
+  } else if(named.length){
     /* a link carrying figures opens as its own property, and the query is then
        dropped from the address so refreshing never piles up duplicates */
     const p = blankProject(seed);
