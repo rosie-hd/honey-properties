@@ -375,6 +375,7 @@ body.on-projects .model-only{display:none !important}
 .chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;border:1px solid var(--hair);white-space:nowrap}
 .chip.meas{color:var(--good-text);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
 .chip.ind{color:var(--honey);border-color:color-mix(in srgb,var(--honey) 45%,transparent)}
+.chip.bad{color:var(--crit);border-color:color-mix(in srgb,var(--crit) 45%,transparent)}
 .chip.anch{color:var(--s1);border-color:color-mix(in srgb,var(--s1) 45%,transparent)}
 #mktTable td{vertical-align:middle}
 #mktTable .mkt{font-family:var(--body);font-size:13px;font-weight:600}
@@ -627,6 +628,7 @@ table.mini tr:last-child td{border-bottom:none}
     <div class="seg" id="mktSort" role="group" aria-label="Sort by">
       <button data-sort="abs" aria-pressed="true">By £ spread</button>
       <button data-sort="mult" aria-pressed="false">By multiple</button>
+      <button data-sort="works" aria-pressed="false">By works it pays for</button>
     </div>
   </div>
 
@@ -645,7 +647,7 @@ table.mini tr:last-child td{border-bottom:none}
       <table id="mktTable">
         <thead><tr>
           <th style="width:23%">Market</th><th style="width:26%">Range</th>
-          <th>Bottom</th><th>Top</th><th>Spread</th><th>Multiple</th><th>Basis</th><th></th>
+          <th>Bottom</th><th>Top</th><th>Spread</th><th>Works it pays for</th><th>Refurb costs</th><th>Verdict</th><th>Basis</th><th></th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -655,7 +657,9 @@ table.mini tr:last-child td{border-bottom:none}
   <div class="home-cols" style="margin-top:14px">
     <div class="card">
       <h2>What the works cost</h2>
-      <p class="sub">The other half of the trade. A spread only pays if the refurbishment fits inside it.</p>
+      <p class="sub">The other half of the trade, and the column above measures against it. Every pound of
+      renovation is unlevered cash, so it has to earn two pounds of sale price back before it has paid for
+      itself — which is why the spread pays and the works so often do not.</p>
       <table class="mini">
         <tr><td>Standard-spec refurbishment</td><td><b>£130–£190</b> / sq ft</td></tr>
         <tr><td>Full range, basic to high spec</td><td><b>£111–£260</b> / sq ft</td></tr>
@@ -3166,35 +3170,35 @@ function renderDeal(){
    ========================================================================== */
 const MARKETS = [
   {a:"Mayfair, Belgravia &amp; Knightsbridge", s:"Georgian &amp; Victorian stucco townhouses",
-   lo:1115, hi:2323, conf:"measured", src:"Agent ranges for prime central London of £12,000–£25,000/sqm"},
+   lo:1115, hi:2323, cost:"lon", conf:"measured", src:"Agent ranges for prime central London of £12,000–£25,000/sqm"},
   {a:"Kensington &amp; Chelsea", s:"Victorian and Georgian townhouses, garden squares",
-   lo:950, hi:2200, conf:"anchored", src:"Borough sold average £1,630/sf, Propertistics 14 Sep 2026"},
+   lo:950, hi:2200, cost:"lon", conf:"anchored", src:"Borough sold average £1,630/sf, Propertistics 14 Sep 2026"},
   {a:"Notting Hill &amp; Holland Park", s:"Victorian stucco terraces",
-   lo:900, hi:1900, conf:"indicative", src:"Within the prime central London band above"},
+   lo:900, hi:1900, cost:"lon", conf:"indicative", src:"Within the prime central London band above"},
   {a:"City of Westminster", s:"Georgian and Regency terraces, Marylebone and Pimlico",
-   lo:850, hi:1950, conf:"anchored", src:"Borough sold average £1,409/sf, Propertistics 14 Sep 2026"},
+   lo:850, hi:1950, cost:"lon", conf:"anchored", src:"Borough sold average £1,409/sf, Propertistics 14 Sep 2026"},
   {a:"Hampstead &amp; Highgate", s:"Georgian villas, Victorian and Arts &amp; Crafts houses",
-   lo:800, hi:1700, conf:"indicative", src:"Above the £670/sf Barnet borough average"},
+   lo:800, hi:1700, cost:"lon", conf:"indicative", src:"Above the £670/sf Barnet borough average"},
   {a:"Islington &amp; Barnsbury", s:"Georgian terraces, Victorian conversions",
-   lo:750, hi:1500, conf:"indicative", src:"Between the London average and prime central"},
+   lo:750, hi:1500, cost:"lon", conf:"indicative", src:"Between the London average and prime central"},
   {a:"Richmond, Barnes &amp; Kew", s:"Georgian riverside houses, Victorian terraces",
-   lo:700, hi:1350, conf:"indicative", src:"Above the £644/sf Hounslow borough average"},
+   lo:700, hi:1350, cost:"lon", conf:"indicative", src:"Above the £644/sf Hounslow borough average"},
   {a:"Fulham &amp; Parsons Green", s:"Victorian terraces",
-   lo:700, hi:1250, conf:"indicative", src:"Prime London fringe"},
+   lo:700, hi:1250, cost:"lon", conf:"indicative", src:"Prime London fringe"},
   {a:"Oxford — North Oxford", s:"Victorian villas and gabled terraces",
-   lo:500, hi:1000, conf:"indicative", src:"Above the £340–£400/sf South East average"},
+   lo:500, hi:1000, cost:"se", conf:"indicative", src:"Above the £340–£400/sf South East average"},
   {a:"Cambridge", s:"Victorian and Edwardian villas",
-   lo:480, hi:950, conf:"indicative", src:"Above the £340–£400/sf South East average"},
+   lo:480, hi:950, cost:"se", conf:"indicative", src:"Above the £340–£400/sf South East average"},
   {a:"Bath", s:"Georgian crescents and townhouses, largely listed",
    lo:420, hi:900, conf:"indicative", src:"Grade I crescent stock trades far above local average"},
   {a:"Brighton &amp; Hove", s:"Regency squares and crescents",
-   lo:400, hi:850, conf:"indicative", src:"Above the South East average"},
+   lo:400, hi:850, cost:"se", conf:"indicative", src:"Above the South East average"},
   {a:"Clifton, Bristol", s:"Georgian terraces and Victorian villas",
    lo:400, hi:850, conf:"measured", src:"Clifton Georgian townhouse listings imply roughly £650–£850/sf refurbished"},
   {a:"Edinburgh New Town", s:"Georgian townhouses and main-door flats, World Heritage",
    lo:380, hi:800, conf:"indicative", src:"Prime Scottish city market"},
   {a:"Tunbridge Wells", s:"Regency and Victorian villas",
-   lo:350, hi:700, conf:"indicative", src:"Above the South East average"},
+   lo:350, hi:700, cost:"se", conf:"indicative", src:"Above the South East average"},
   {a:"Cheltenham", s:"Regency terraces and villas",
    lo:320, hi:650, conf:"indicative", src:"Town average £323,000 July 2026; prime Regency well above"},
   {a:"York", s:"Georgian townhouses inside the walls",
@@ -3218,6 +3222,29 @@ const MKT_SOURCES = [
    u:"https://postcodecheck.co.uk/property-prices"}
 ];
 
+/* What a market's spread will actually pay for. Buy at the bottom, sell at the
+   top, and solve for the renovation budget that still doubles your money —
+   then hold it against what building work costs. Every pound of works is
+   unlevered cash, so it has to earn two pounds of sale price back. */
+const REFURB_BASE = {lo:130, hi:190};
+function refurbBand(m){
+  const k = m.cost === "lon" ? [1.15, 1.40] : m.cost === "se" ? [1.15, 1.25] : [1, 1];
+  return {lo: Math.round(REFURB_BASE.lo * k[0]), hi: Math.round(REFURB_BASE.hi * k[1])};
+}
+function worksBudget(m){
+  const d = DEAL;
+  const mi = d.purchase > 0 ? MISC_KEYS.reduce((a,k) => a + (+d[k]||0), 0) / d.purchase : 0.076;
+  const L = d.ltv/100, it = (d.rate/100) * (d.months/12), sc = d.saleCostPct/100;
+  /* Ps(1-sc) - L.Pb = 2[Pb(1 + mi + L.it - L) + R]  solved for R */
+  const R = (m.hi*(1-sc) - L*m.lo - 2*m.lo*(1 + mi + L*it - L)) / 2;
+  return R;
+}
+function verdict(m){
+  const R = worksBudget(m), band = refurbBand(m);
+  if(R >= band.hi) return {k:"clears", t:"clears", R, band};
+  if(R >= band.lo) return {k:"tight",  t:"tight",  R, band};
+  return {k:"fails", t:"won't pay", R, band};
+}
 let MKT_SORT = "abs";
 
 function rangeBar(m, floor, ceil){
@@ -3235,20 +3262,24 @@ function rangeBar(m, floor, ceil){
 function renderMarkets(){
   const ccySave = S.ccy; S.ccy = "£";
   const rows = MARKETS.map(m => Object.assign({}, m, {sp: m.hi - m.lo, mult: m.hi / Math.max(1, m.lo)}));
-  rows.sort((a,b) => MKT_SORT === "abs" ? b.sp - a.sp : b.mult - a.mult);
+  rows.sort((a,b) => MKT_SORT === "abs" ? b.sp - a.sp
+                   : MKT_SORT === "mult" ? b.mult - a.mult
+                   : worksBudget(b) - worksBudget(a));
   const floor = Math.min(...rows.map(r => r.lo)), ceil = Math.max(...rows.map(r => r.hi));
 
-  document.querySelector("#mktTable tbody").innerHTML = rows.map(m => `
+  document.querySelector("#mktTable tbody").innerHTML = rows.map(m => { const v = verdict(m); return `
     <tr>
       <td><span class="mkt">${m.a}<span class="stock">${m.s}</span></span></td>
       <td><div class="rangebar">${rangeBar(m, floor, ceil)}</div></td>
       <td>£${nf(m.lo,0)}</td>
       <td>£${nf(m.hi,0)}</td>
       <td style="font-weight:620">£${nf(m.sp,0)}</td>
-      <td>${m.mult.toFixed(2)}×</td>
+      <td class="${v.k === "fails" ? "neg" : v.k === "clears" ? "pos" : ""}" style="font-weight:620">£${nf(Math.max(0,v.R),0)}</td>
+      <td style="color:var(--muted)">£${nf(v.band.lo,0)}–£${nf(v.band.hi,0)}</td>
+      <td><span class="chip ${v.k === "clears" ? "meas" : v.k === "tight" ? "anch" : "bad"}">${v.t}</span></td>
       <td><span class="chip ${m.conf === "measured" ? "meas" : m.conf === "anchored" ? "anch" : "ind"}" title="${m.src.replace(/"/g,"&quot;")}">${m.conf}</span></td>
       <td><button class="usebtn" data-lo="${m.lo}" data-hi="${m.hi}">Use</button></td>
-    </tr>`).join("");
+    </tr>`; }).join("");
 
   document.querySelectorAll("#mktTable .usebtn").forEach(b => b.addEventListener("click", () => {
     DEAL.spreadLow  = clamp(F.spreadLow,  +b.dataset.lo);
