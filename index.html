@@ -372,6 +372,25 @@ body.on-projects .model-only{display:none !important}
 }
 .proj-empty p{color:var(--muted);font-size:13px;margin:0 0 12px}
 
+.chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;border:1px solid var(--hair);white-space:nowrap}
+.chip.meas{color:var(--good-text);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
+.chip.ind{color:var(--honey);border-color:color-mix(in srgb,var(--honey) 45%,transparent)}
+.chip.anch{color:var(--s1);border-color:color-mix(in srgb,var(--s1) 45%,transparent)}
+#mktTable td{vertical-align:middle}
+#mktTable .mkt{font-family:var(--body);font-size:13px;font-weight:600}
+#mktTable .stock{font-family:var(--body);font-size:11px;color:var(--muted);font-weight:400;display:block;margin-top:1px}
+.rangebar{position:relative;height:22px}
+.rangebar svg{display:block;width:100%;height:22px;overflow:visible}
+.usebtn{background:none;border:1px solid var(--hair);color:var(--ink-2);font:inherit;font-size:11.5px;
+  padding:3px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.usebtn:hover{border-color:var(--honey);color:var(--ink)}
+table.mini{width:100%;border-collapse:collapse;font-family:var(--body);font-size:12.5px}
+table.mini td{padding:6px 0;border-bottom:1px solid var(--grid);text-align:left;white-space:normal}
+table.mini td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap}
+table.mini tr:last-child td{border-bottom:none}
+.srcs{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
+.srcs li{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.srcs a{color:var(--honey)}
 .loaded-bar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;
   background:color-mix(in srgb,var(--honey) 13%,var(--surface));
@@ -431,6 +450,7 @@ body.on-projects .model-only{display:none !important}
   <nav class="mainnav" id="mainnav">
     <button data-go="#/">Deal</button>
     <button data-go="#/properties">Properties</button>
+    <button data-go="#/markets">Markets</button>
     <button data-go="#/plan">5-year plan</button>
   </nav>
   <div class="idblock model-only">
@@ -594,6 +614,76 @@ body.on-projects .model-only{display:none !important}
         <span class="stepv" id="vRoe2">—</span>
       </li>
     </ol>
+  </div>
+</div>
+
+<div id="marketsView" hidden>
+  <div class="proj-head">
+    <div>
+      <h2 class="proj-title">Where the spreads are widest</h2>
+      <p class="proj-sub">UK private residential, period stock only — Georgian, Regency, Victorian and Edwardian
+      houses and townhouses. No new-build blocks, no volume housing.</p>
+    </div>
+    <div class="seg" id="mktSort" role="group" aria-label="Sort by">
+      <button data-sort="abs" aria-pressed="true">By £ spread</button>
+      <button data-sort="mult" aria-pressed="false">By multiple</button>
+    </div>
+  </div>
+
+  <div class="banner">
+    <b>!</b>
+    <div><b>Read the provenance before you act on any of this.</b> Price levels marked
+    <span class="chip meas">measured</span> come from the sources listed at the foot of this page and are dated.
+    The low-to-high band on each row is marked <span class="chip ind">indicative</span> — nobody publishes
+    unmodernised-to-refurbished spreads by area for free, because that is the number worth paying for. Treat
+    these as a shortlist to go and verify, not as comparables. The one row below built from actual sold comps
+    is the standard the rest should be held to.</div>
+  </div>
+
+  <div class="card">
+    <div class="tbl-wrap">
+      <table id="mktTable">
+        <thead><tr>
+          <th style="width:23%">Market</th><th style="width:26%">Range</th>
+          <th>Bottom</th><th>Top</th><th>Spread</th><th>Multiple</th><th>Basis</th><th></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="home-cols" style="margin-top:14px">
+    <div class="card">
+      <h2>What the works cost</h2>
+      <p class="sub">The other half of the trade. A spread only pays if the refurbishment fits inside it.</p>
+      <table class="mini">
+        <tr><td>Standard-spec refurbishment</td><td><b>£130–£190</b> / sq ft</td></tr>
+        <tr><td>Full range, basic to high spec</td><td><b>£111–£260</b> / sq ft</td></tr>
+        <tr><td>London &amp; the South East</td><td><b>+15% to +40%</b> on those rates</td></tr>
+        <tr><td>New build and extensions</td><td>rarely under <b>£200</b> / sq ft</td></tr>
+      </table>
+      <p class="sub" style="margin-top:12px">So in a market with a £400/sq ft spread, a £190/sq ft refurbishment
+      leaves roughly £210/sq ft before fees, finance and stamp duty. That is the real test of a row below.</p>
+    </div>
+    <div class="card">
+      <h2>National context</h2>
+      <p class="sub">Regional averages across all stock, for scale. Period houses sit well above these.</p>
+      <table class="mini">
+        <tr><td>London</td><td><b>£450–£690</b> / sq ft</td></tr>
+        <tr><td>South East</td><td><b>£340–£400</b> / sq ft</td></tr>
+        <tr><td>North West</td><td><b>£170–£210</b> / sq ft</td></tr>
+        <tr><td>Yorkshire</td><td><b>£160–£195</b> / sq ft</td></tr>
+        <tr><td>North East</td><td><b>£115–£155</b> / sq ft</td></tr>
+      </table>
+      <p class="sub" style="margin-top:12px">Nationally, unmodernised homes list about <b>7.5%</b> below the
+      average — roughly £345,000 against £373,000. That is across all stock and is the discount the wide-spread
+      thesis has to beat: in ordinary housing there is almost nothing in it.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>Sources</h2>
+    <ul class="srcs" id="mktSources"></ul>
   </div>
 </div>
 
@@ -1162,10 +1252,11 @@ function showView(v){
   VIEW = v;
   document.getElementById("homeView").hidden     = v !== "home";
   document.getElementById("planView").hidden     = v !== "plan";
+  document.getElementById("marketsView").hidden  = v !== "markets";
   document.getElementById("projectsView").hidden = v !== "projects";
   document.getElementById("modelView").hidden    = v !== "model";
   document.body.classList.toggle("on-projects", v !== "model");
-  const navFor = {home:"#/", plan:"#/plan", projects:"#/properties", model:"#/properties"};
+  const navFor = {home:"#/", plan:"#/plan", markets:"#/markets", projects:"#/properties", model:"#/properties"};
   document.querySelectorAll("#mainnav button").forEach(b => {
     if(b.dataset.go === navFor[v]) b.setAttribute("aria-current","page");
     else b.removeAttribute("aria-current");
@@ -1173,6 +1264,7 @@ function showView(v){
   if(v === "projects") renderProjects();
   if(v === "home") renderDeal();
   if(v === "plan") renderHome();
+  if(v === "markets") renderMarkets();
 }
 function rerender(){
   if(VIEW === "model") render();
@@ -1261,6 +1353,7 @@ function route(){
   if(m && STORE.projects.some(p => p.id === m[1])) openProject(m[1], false);
   else if(h.startsWith("#/properties")) showView("projects");
   else if(h.startsWith("#/plan")) showView("plan");
+  else if(h.startsWith("#/markets")) showView("markets");
   else showView("home");
 }
 
@@ -3063,7 +3156,120 @@ function renderDeal(){
   drawSpread();
   S.ccy = ccySave;
 }
+/* ==========================================================================
+   14. MARKETS
+   Period stock only. `conf` says where a row's price level came from:
+   "measured" means a cited, dated source; "indicative" means a reasoned
+   estimate anchored on those sources and worth nothing until checked.
+   The low-to-high band is indicative on every row bar Clifton — no free
+   source publishes unmodernised-to-refurbished spreads by area.
+   ========================================================================== */
+const MARKETS = [
+  {a:"Mayfair, Belgravia &amp; Knightsbridge", s:"Georgian &amp; Victorian stucco townhouses",
+   lo:1115, hi:2323, conf:"measured", src:"Agent ranges for prime central London of £12,000–£25,000/sqm"},
+  {a:"Kensington &amp; Chelsea", s:"Victorian and Georgian townhouses, garden squares",
+   lo:950, hi:2200, conf:"anchored", src:"Borough sold average £1,630/sf, Propertistics 14 Sep 2026"},
+  {a:"Notting Hill &amp; Holland Park", s:"Victorian stucco terraces",
+   lo:900, hi:1900, conf:"indicative", src:"Within the prime central London band above"},
+  {a:"City of Westminster", s:"Georgian and Regency terraces, Marylebone and Pimlico",
+   lo:850, hi:1950, conf:"anchored", src:"Borough sold average £1,409/sf, Propertistics 14 Sep 2026"},
+  {a:"Hampstead &amp; Highgate", s:"Georgian villas, Victorian and Arts &amp; Crafts houses",
+   lo:800, hi:1700, conf:"indicative", src:"Above the £670/sf Barnet borough average"},
+  {a:"Islington &amp; Barnsbury", s:"Georgian terraces, Victorian conversions",
+   lo:750, hi:1500, conf:"indicative", src:"Between the London average and prime central"},
+  {a:"Richmond, Barnes &amp; Kew", s:"Georgian riverside houses, Victorian terraces",
+   lo:700, hi:1350, conf:"indicative", src:"Above the £644/sf Hounslow borough average"},
+  {a:"Fulham &amp; Parsons Green", s:"Victorian terraces",
+   lo:700, hi:1250, conf:"indicative", src:"Prime London fringe"},
+  {a:"Oxford — North Oxford", s:"Victorian villas and gabled terraces",
+   lo:500, hi:1000, conf:"indicative", src:"Above the £340–£400/sf South East average"},
+  {a:"Cambridge", s:"Victorian and Edwardian villas",
+   lo:480, hi:950, conf:"indicative", src:"Above the £340–£400/sf South East average"},
+  {a:"Bath", s:"Georgian crescents and townhouses, largely listed",
+   lo:420, hi:900, conf:"indicative", src:"Grade I crescent stock trades far above local average"},
+  {a:"Brighton &amp; Hove", s:"Regency squares and crescents",
+   lo:400, hi:850, conf:"indicative", src:"Above the South East average"},
+  {a:"Clifton, Bristol", s:"Georgian terraces and Victorian villas",
+   lo:400, hi:850, conf:"measured", src:"Clifton Georgian townhouse listings imply roughly £650–£850/sf refurbished"},
+  {a:"Edinburgh New Town", s:"Georgian townhouses and main-door flats, World Heritage",
+   lo:380, hi:800, conf:"indicative", src:"Prime Scottish city market"},
+  {a:"Tunbridge Wells", s:"Regency and Victorian villas",
+   lo:350, hi:700, conf:"indicative", src:"Above the South East average"},
+  {a:"Cheltenham", s:"Regency terraces and villas",
+   lo:320, hi:650, conf:"indicative", src:"Town average £323,000 July 2026; prime Regency well above"},
+  {a:"York", s:"Georgian townhouses inside the walls",
+   lo:300, hi:620, conf:"indicative", src:"Above the £160–£195/sf Yorkshire average"},
+  {a:"Harrogate", s:"Victorian and Edwardian villas",
+   lo:280, hi:600, conf:"indicative", src:"Above the £160–£195/sf Yorkshire average"}
+];
+
+const MKT_SOURCES = [
+  {t:"Propertistics — UK price per square foot rankings, dated 14 September 2026. Kensington &amp; Chelsea £1,630/sf, Westminster £1,409/sf, City of London £1,269/sf, Barnet £670/sf, Hounslow £644/sf, Lewisham £620/sf. Borough-wide sold averages across all stock, not period houses alone.",
+   u:"https://propertistics.co.uk/rankings/price-per-square-foot/"},
+  {t:"Investropa — London housing prices 2026. Prime central London at £12,000–£25,000 per square metre, which is £1,115–£2,323 per square foot.",
+   u:"https://investropa.com/blogs/news/average-property-price-per-sqm-london"},
+  {t:"Coutts London Prime Property Index, Q1 2026. Knightsbridge and Belgravia 29.5% below peak; Chelsea 20.5% below peak. Useful for entry timing, no per-square-foot figures.",
+   u:"https://www.coutts.com/insights/property/coutts-london-prime-property-index-q1-2026.html"},
+  {t:"PropertyData — £/sqft database: roughly 290,000 live asking prices and 1.4 million sold prices over 24 months, from agent floorplans and EPC-matched Land Registry records, to 31 July 2026. This is the subscription that would replace the indicative bands below with measured ones.",
+   u:"https://propertydata.co.uk/price-per-square-foot"},
+  {t:"Renovation cost guides, 2026. Standard-spec refurbishment £130–£190/sq ft; full range £1,200–£2,800 per square metre (£111–£260/sq ft); London and the South East add 15–40%.",
+   u:"https://renovationcosts.co.uk/renovation-cost-per-m2-uk"},
+  {t:"Regional averages across all stock and national unmodernised discount (about £345,000 against a £373,000 average, roughly 7.5%).",
+   u:"https://postcodecheck.co.uk/property-prices"}
+];
+
+let MKT_SORT = "abs";
+
+function rangeBar(m, floor, ceil){
+  const W = 100, H = 22, y = 11;
+  const X = v => ((v - floor) / ((ceil - floor) || 1)) * W;
+  const w = Math.max(0.6, X(m.hi) - X(m.lo));
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="0" x2="${W}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <rect x="${X(m.lo).toFixed(2)}" y="${y-5}" width="${w.toFixed(2)}" height="10" rx="2"
+          fill="var(--s1)" fill-opacity="0.75"/>
+    <circle cx="${X(m.lo).toFixed(2)}" cy="${y}" r="2.4" fill="var(--s2)" vector-effect="non-scaling-stroke"/>
+  </svg>`;
+}
+
+function renderMarkets(){
+  const ccySave = S.ccy; S.ccy = "£";
+  const rows = MARKETS.map(m => Object.assign({}, m, {sp: m.hi - m.lo, mult: m.hi / Math.max(1, m.lo)}));
+  rows.sort((a,b) => MKT_SORT === "abs" ? b.sp - a.sp : b.mult - a.mult);
+  const floor = Math.min(...rows.map(r => r.lo)), ceil = Math.max(...rows.map(r => r.hi));
+
+  document.querySelector("#mktTable tbody").innerHTML = rows.map(m => `
+    <tr>
+      <td><span class="mkt">${m.a}<span class="stock">${m.s}</span></span></td>
+      <td><div class="rangebar">${rangeBar(m, floor, ceil)}</div></td>
+      <td>£${nf(m.lo,0)}</td>
+      <td>£${nf(m.hi,0)}</td>
+      <td style="font-weight:620">£${nf(m.sp,0)}</td>
+      <td>${m.mult.toFixed(2)}×</td>
+      <td><span class="chip ${m.conf === "measured" ? "meas" : m.conf === "anchored" ? "anch" : "ind"}" title="${m.src.replace(/"/g,"&quot;")}">${m.conf}</span></td>
+      <td><button class="usebtn" data-lo="${m.lo}" data-hi="${m.hi}">Use</button></td>
+    </tr>`).join("");
+
+  document.querySelectorAll("#mktTable .usebtn").forEach(b => b.addEventListener("click", () => {
+    DEAL.spreadLow  = clamp(F.spreadLow,  +b.dataset.lo);
+    DEAL.spreadHigh = clamp(F.spreadHigh, +b.dataset.hi);
+    DEAL.ccy = "£";
+    saveStore();
+    location.hash = "#/";
+  }));
+
+  document.querySelectorAll("#mktSort button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.sort === MKT_SORT)));
+
+  document.getElementById("mktSources").innerHTML = MKT_SOURCES.map(x =>
+    `<li>${x.t} <a href="${x.u}" target="_blank" rel="noopener noreferrer">${new URL(x.u).hostname.replace(/^www\./,"")}</a></li>`).join("");
+  S.ccy = ccySave;
+}
 /* ---------- boot ---------- */
+document.getElementById("mktSort").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  MKT_SORT = b.dataset.sort; renderMarkets();
+});
 document.getElementById("saleBasisSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b || b.dataset.basis === DEAL.saleBasis) return;
   const c = dealCalc();

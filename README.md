@@ -9,6 +9,8 @@ five-year plan they add up to.
   it: buy at the bottom of what the area trades at, spend, sell at the top, then the
   same again with extra floor area built. Every figure is editable.
 - **Properties** — every deal on the shelf; click one to open its full model.
+- **Markets** — where the widest period-property spreads are in the UK, with every price
+  level labelled for where it came from. Click a market to load its range into the deal.
 - **5-year plan** — the profit target, the ramp towards it, and where the money is today.
 
 ## The plan
