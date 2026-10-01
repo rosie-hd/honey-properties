@@ -438,6 +438,15 @@ table.mini tr:last-child td{border-bottom:none}
 .found .fs{font-family:var(--mono);font-size:10.5px;color:var(--muted);display:block;margin-top:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .found .miss{font-size:12.5px;color:var(--muted);font-style:italic}
+.found li.askrow{align-items:flex-start}
+.found .miss-v{color:var(--crit);font-weight:600;font-size:13px;font-family:var(--body)}
+.askbox{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.askbox input{
+  width:96px;background:var(--surface-2);border:1px solid var(--honey);border-radius:7px;
+  color:var(--ink);font-family:var(--mono);font-size:13px;padding:6px 8px;
+}
+.askbox input:focus{outline:2px solid var(--honey);outline-offset:1px}
+.askbox > span{font-size:11.5px;color:var(--muted)}
 .found-foot{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .found-foot .note{font-size:11.5px;color:var(--muted)}
 .applied{color:var(--good-text);font-size:12px;font-weight:600}
@@ -881,6 +890,7 @@ table.mini tr:last-child td{border-bottom:none}
   <!-- ============ OUTPUTS ============ -->
   <div>
     <div class="card summary">
+      <div class="dealwarn" id="costWarn" hidden></div>
       <div class="hero">
         <div>
           <div class="lab">Total cash you put in</div>
@@ -1396,7 +1406,7 @@ const FIELDS = [
   {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
 
   {k:"purchase_d",  l:"Purchase price",      min:250000, max:30000000, st:50000, pre:"ccy", dec:0, g:"d-price", on:"deal", src:"purchase", compact:1},
-  {k:"sqft",        l:"Floor area",          min:500,    max:500000,  st:250,   suf:" sq ft", dec:0, g:"d-area", on:"deal", compact:1},
+  {k:"sqft_d",      l:"Floor area",          min:500,    max:500000,  st:250,   suf:" sq ft", dec:0, g:"d-area", on:"deal", src:"sqft", compact:1},
   {k:"spreadLow",   l:"Bottom of the range", min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
   {k:"spreadHigh",  l:"Top of the range",    min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-spread", on:"deal", compact:1},
   {k:"targetPsf",   l:"Target sale price",   min:10,     max:6000,    st:5,     pre:"ccy", suf:" / sq ft", dec:0, g:"d-target", on:"deal", compact:1},
@@ -1429,7 +1439,15 @@ const FIELDS = [
   {k:"cDist",    l:"Max distance",          min:0.25,  max:10,     st:0.25, suf:" miles", dec:2, g:"g-comp"},
   {k:"cYears",   l:"Sold within last",      min:1,     max:10,     st:1,    suf:" years", dec:0, g:"g-comp"}
 ];
-const F = {}; FIELDS.forEach(f => F[f.k] = f);
+const F = {};
+FIELDS.forEach(f => {
+  /* Two fields sharing a key silently overwrite each other here, and every
+     lookup afterwards — setVal, syncField, the drag handlers — then resolves to
+     the wrong one and writes to the wrong page's state. Use `src` to point a
+     distinct key at a shared store field instead. */
+  if(F[f.k]) console.error("Honey Properties: duplicate field key", f.k);
+  F[f.k] = f;
+});
 /* purchase_d writes DEAL.purchase — the key on the property model is taken */
 FIELDS.forEach(f => { if(f.src) f.store = f.src; });
 function fkey(f){ return f.store || f.k; }
@@ -2100,6 +2118,17 @@ function render(){
   document.getElementById("kBreak").textContent = bkIdx >= 0
     ? `cash back by year ${m.years[bkIdx].y}` : `cash back needs the sale`;
 
+  const dis = document.getElementById("costWarn");
+  if(dis){
+    const heavy = m.fitTotal > S.purchase;
+    dis.hidden = !heavy;
+    if(heavy) dis.innerHTML =
+      `<span class="mark">!</span><span><b>The fit-out is larger than the building.</b> ` +
+      `${money(m.fitTotal)} of works against a ${money(S.purchase)} purchase. That can be right for a ` +
+      `shell, but if you have just read a price in from a listing, check the fit-out budget and the ` +
+      `floor area are both this property's and not the previous one's.</span>`;
+  }
+
   document.getElementById("chartSub").textContent =
     `${m.hold}-year hold · equity ${moneyC(m.equity)}`;
 
@@ -2418,8 +2447,18 @@ function parseListing(text){
   if(areas.length) facts.area = areas[0];
 
   /* ---- the listing's own address line and url ---- */
-  const firstLine = text.split(/\r?\n/).map(l => l.trim())
-    .find(l => l.length > 5 && l.length < 90 && /[a-z]/i.test(l) && !/^(page|www\.|https?:)/i.test(l));
+  /* A listing saved from a browser carries print furniture: a date and time
+     stamp at the top, the agent's name after a pipe, page numbers. None of
+     that is the property. */
+  const clean = l => l
+    .replace(/^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4},?\s*\d{1,2}[:.]\d{2}(\s*[ap]\.?m\.?)?\s*/i, "")
+    .replace(/\s*[|\u2013\u2014]\s*[^|\u2013\u2014]{2,40}$/,"")      /* trailing agent branding */
+    .replace(/\s*\u00b7\s*(for sale|to let).*$/i,"")
+    .trim();
+  const firstLine = text.split(/\r?\n/).map(l => clean(l.trim()))
+    .find(l => l.length > 5 && l.length < 90 && /[a-z]/i.test(l)
+            && !/^(page\b|www\.|https?:|\d+\s*of\s*\d+$)/i.test(l)
+            && !/^\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}/.test(l));
   if(firstLine) facts.address = {value:firstLine, snippet:firstLine};
   const url = text.match(URL_RE);
   if(url) facts.url = {value:url[0], snippet:url[0]};
@@ -2498,6 +2537,23 @@ function showFound(facts, sourceLabel){
   add("address", "Property name",     facts.address ? facts.address.value : "");
   add("url",     "Listing link",      facts.url ? facts.url.value : "");
 
+  /* Estate agents routinely publish no floor area at all — Rightmove prints
+     "Ask agent". Applying a price without one leaves every per-square-foot
+     figure on the page reading off whatever the area happened to be before,
+     which is worse than useless. So the gap gets a row of its own. */
+  const missingArea = facts.price && !facts.area;
+  if(missingArea){
+    rows.push(`<li class="askrow">
+      <span class="fl">Floor area</span>
+      <span><span class="fv miss-v">not in this listing</span>
+        <span class="fs">agents commonly print &ldquo;ask agent&rdquo; &mdash; without it, every per-sq-ft
+        figure below is read off the previous property&rsquo;s area</span></span>
+      <span class="askbox"><input id="askArea" type="text" inputmode="numeric" placeholder="${nf(S.sqft,0)}"
+        aria-label="Floor area in square feet"><span>sq ft</span>
+        <button class="btn" id="askAreaBtn">Set</button></span>
+    </li>`);
+  }
+
   /* An address alone is not a reading. Without this, prose with no figures in it
      came back as a confident "Found in…" listing only the first line. */
   const useful = facts.price || facts.area;
@@ -2518,6 +2574,18 @@ function showFound(facts, sourceLabel){
 
   resEl.querySelectorAll("[data-apply]").forEach(b =>
     b.addEventListener("click", () => { applyFact(b.dataset.apply); b.outerHTML = '<span class="applied">Applied</span>'; }));
+  const ab = document.getElementById("askAreaBtn"), ai = document.getElementById("askArea");
+  if(ab) ab.addEventListener("click", () => {
+    const v = parseFloat((ai.value || "").replace(/[^0-9.]/g,""));
+    if(!isFinite(v) || v <= 0){ ai.focus(); return; }
+    setSqft(v);
+    ai.closest("li").innerHTML =
+      `<span class="fl">Floor area</span><span><span class="fv">${nf(v,0)} sq ft</span>
+       <span class="fs">${money(S.purchase/Math.max(1,v),0)} a sq ft on the purchase price</span></span>
+       <span class="applied">Set</span>`;
+  });
+  if(ai) ai.addEventListener("keydown", e => { if(e.key === "Enter") ab.click(); });
+
   const all = document.getElementById("applyAll");
   if(all) all.addEventListener("click", () => {
     ["price","area","address","url"].forEach(applyFact);
