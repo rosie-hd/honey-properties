@@ -1032,7 +1032,7 @@ const DEFAULTS = {
   feeValuation:  750,
   feeArrange:      1,    /* % of the loan */
   feeOther:     1500,
-  fitOut:    3000000,
+  fitOut:    0,
   contPct:   10,
   buildMon:  12,
   holdMon:   18,
@@ -1041,6 +1041,7 @@ const DEFAULTS = {
   exitPsf:   0,
   rangeLo:   0,
   rangeHi:   0,
+  rangeSet:  0,
   ltvProp:   65,
   ltcFit:    65,
   rateProp:  5,
@@ -1194,14 +1195,14 @@ function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, c =>
 function migrate(st){
   if(!st) return st;
   const sqft = +st.sqft > 0 ? +st.sqft : 1;
-  if(st.exitMode !== "psf" && st.exitMode !== "price"){
+  if(st.exitMode !== "psf" && st.exitMode !== "price" && st.exitMode !== "top"){
     /* A property on the old cap-rate exit never used exitPrice, so whatever is
        sitting in it is a default nobody chose — carrying it over invents a sale
        price out of nothing. Only a mode explicitly set to "price" means the
        figure beside it was anybody's actual view. Everything else falls back to
        the price paid: a flat sale, which claims nothing and reads as a loss
        until it is set. */
-    st.exitMode = "psf";
+    st.exitMode = "top";
     st.exitPsf  = Math.round((+st.purchase || 0) / sqft);
     delete st.exitPrice;
   }
@@ -1215,15 +1216,20 @@ function migrate(st){
   delete st.acqPct;
   if(!isFinite(+st.rangeLo))  st.rangeLo  = 0;
   if(!isFinite(+st.rangeHi))  st.rangeHi  = 0;
+  if(!isFinite(+st.rangeSet)) st.rangeSet = (+st.rangeHi > +st.rangeLo) ? 1 : 0;
   ["hold","exitCap","revMode","rentPsf","revTotal","revGrowth","vacancy","leaseUp",
    "opexMode","opexPct","opexPsf","amortYrs","io","capInt"].forEach(k => delete st[k]);
   return st;
 }
 
 function blankProject(seed){
+  /* No sample comparables. They were commercial blocks at a few hundred pounds a
+     square foot, and because the local range is read off whatever comps are
+     present, every new property silently inherited that range — then priced a
+     London flat against it. Made-up comps are worse than none. */
   return {id:newId(), created:Date.now(), updated:Date.now(),
           s:Object.assign({}, DEFAULTS, seed || {}),
-          comps:SAMPLE_COMPS.map(c => Object.assign({}, c))};
+          comps:[]};
 }
 
 function loadStore(){
@@ -1682,6 +1688,7 @@ function setVal(k, v, skipRender){          /* v arrives in the displayed unit *
   v = clamp(f, v);
   v = Math.round(v * Math.pow(10, L.dec+2)) / Math.pow(10, L.dec+2);
   bag(f)[fkey(f)] = toStore(f, v);
+  if(k === "rangeLo" || k === "rangeHi") S.rangeSet = 1;   /* yours now, not seeded */
   syncField(k);
   if(!skipRender) rerender();
 }
@@ -1829,7 +1836,10 @@ function compRange(){
   return hits.length >= 2 ? {lo:hits[0], hi:hits[hits.length-1], n:hits.length} : null;
 }
 function ensureRange(){
-  if(num0(S.rangeHi) > 0) return;
+  /* An auto-seeded range has to follow the property. It used to seed once and
+     then sit there, so reading a new listing in left the old range pricing the
+     new building. Only a range somebody actually chose is left alone. */
+  if(S.rangeSet) return;
   const r = compRange();
   const per = AU().perSqft;
   if(r){ S.rangeLo = r.lo/per; S.rangeHi = r.hi/per; }
@@ -1925,12 +1935,15 @@ function renderRange(m){
           : `Selling at the top would give ${money(num0(S.rangeHi)*S.sqft)}; you have set ${money(m.salePrice)}.`);
   const be = hurdle(0)*per, dbl = hurdle(1)*per, buy = m.purchasePsf*per;
   const hEl = document.getElementById("rangeHurdle");
+  const haveRange = num0(S.rangeHi) > num0(S.rangeLo);
   if(hEl) hEl.innerHTML =
     `<span class="${m.salePsfUsed*per >= be ? "pos" : "neg"}">Break even at ${C()}${nf(be,0)} a ${AU().short}</span>
      &middot; <span class="${m.salePsfUsed*per >= dbl ? "pos" : "neg"}">double your money at ${C()}${nf(dbl,0)}</span>
-     &middot; that is ${(be/buy).toFixed(2)}&times; and ${(dbl/buy).toFixed(2)}&times; what you are paying.
-     To double at this works budget you want to buy at or under
-     <b>${C()}${nf(num0(S.rangeHi)*per / (dbl/buy), 0)} a ${AU().short}</b>.`;
+     &middot; that is ${(be/buy).toFixed(2)}&times; and ${(dbl/buy).toFixed(2)}&times; what you are paying.` +
+    (haveRange
+      ? ` To double against the top of this range you want to buy at or under
+          <b>${C()}${nf(num0(S.rangeHi)*per / (dbl/buy), 0)} a ${AU().short}</b>.`
+      : ` Set the range above and this will tell you the most you can pay.`);
   drawRangeChart(m);
 }
 /* ---- chart 1: everything that goes out, against what comes back ---- */
@@ -2305,7 +2318,7 @@ document.getElementById("sdltCaseSeg").addEventListener("click", e => {
 document.getElementById("rangeFromComps").addEventListener("click", () => {
   const r = compRange(), per = AU().perSqft;
   if(!r){ alert("Add at least two comparable sales that match the filters below, then this can read the range off them."); return; }
-  S.rangeLo = r.lo/per; S.rangeHi = r.hi/per;
+  S.rangeLo = r.lo/per; S.rangeHi = r.hi/per; S.rangeSet = 1;
   save(); render();
 });
 document.getElementById("capSeg").addEventListener("click", e => {
@@ -2619,6 +2632,16 @@ function showFound(facts, sourceLabel){
      figure on the page reading off whatever the area happened to be before,
      which is worse than useless. So the gap gets a row of its own. */
   const missingArea = facts.price && !facts.area;
+  if(facts.price && !(num0(S.fitOut) > 0)){
+    rows.push(`<li class="askrow">
+      <span class="fl">Works budget</span>
+      <span><span class="fv miss-v">nobody else can tell you this</span>
+        <span class="fs">a listing never carries it, and it is the second biggest number in the deal</span></span>
+      <span class="askbox"><input id="askWorks" type="text" inputmode="numeric" placeholder="0"
+        aria-label="Works budget"><span>${C()}</span>
+        <button class="btn" id="askWorksBtn">Set</button></span>
+    </li>`);
+  }
   if(missingArea){
     rows.push(`<li class="askrow">
       <span class="fl">Floor area</span>
@@ -2651,6 +2674,18 @@ function showFound(facts, sourceLabel){
 
   resEl.querySelectorAll("[data-apply]").forEach(b =>
     b.addEventListener("click", () => { applyFact(b.dataset.apply); b.outerHTML = '<span class="applied">Applied</span>'; }));
+  const wb = document.getElementById("askWorksBtn"), wi = document.getElementById("askWorks");
+  if(wb) wb.addEventListener("click", () => {
+    const v = parseFloat((wi.value || "").replace(/[^0-9.]/g,""));
+    if(!isFinite(v) || v < 0){ wi.focus(); return; }
+    setVal("fitOut", v);
+    wi.closest("li").innerHTML =
+      `<span class="fl">Works budget</span><span><span class="fv">${money(v)}</span>
+       <span class="fs">${perArea(v * (1 + num0(S.contPct)/100))} including contingency</span></span>
+       <span class="applied">Set</span>`;
+  });
+  if(wi) wi.addEventListener("keydown", e => { if(e.key === "Enter") wb.click(); });
+
   const ab = document.getElementById("askAreaBtn"), ai = document.getElementById("askArea");
   if(ab) ab.addEventListener("click", () => {
     const v = parseFloat((ai.value || "").replace(/[^0-9.]/g,""));
