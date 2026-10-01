@@ -262,6 +262,9 @@ details.imp summary:hover{color:var(--ink)}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
 .deal-hero .hero{margin-bottom:0}
+.range-row{margin-top:16px;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap}
+.range-row #g-range{display:flex;gap:22px;flex-wrap:wrap}
+.range-row .field{margin-bottom:0;width:184px}
 .spread-row{margin-top:16px}
 .spread-row #d-spread{display:flex;gap:22px;flex-wrap:wrap}
 .spread-row .field{margin-bottom:0;width:186px}
@@ -865,7 +868,8 @@ table.mini tr:last-child td{border-bottom:none}
         <div class="toggle-row">
           <span>Sale price set as</span>
           <div class="seg" id="exitSeg" role="group" aria-label="How the sale price is set">
-            <button data-exit="psf" aria-pressed="true">a rate</button>
+            <button data-exit="top" aria-pressed="true">top of range</button>
+            <button data-exit="psf" aria-pressed="false">a rate</button>
             <button data-exit="price" aria-pressed="false">a total</button>
           </div>
         </div>
@@ -897,6 +901,16 @@ table.mini tr:last-child td{border-bottom:none}
         <div class="tile"><div class="lab">Uplift on cost</div><div class="v" id="kYoc">—</div><div class="d" id="kSpread">—</div></div>
         <div class="tile"><div class="lab">Profit</div><div class="v" id="kExit">—</div><div class="d" id="kExitPsf">—</div></div>
         <div class="tile"><div class="lab">Interest over the hold</div><div class="v" id="kDscr">—</div><div class="d" id="kBreak">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Where this sits in the local range<span class="rt" id="rangeSub"></span></h2>
+      <p class="sub" id="rangeLead">—</p>
+      <svg id="rangeChart" class="chart" role="img" aria-label="Where the purchase and sale prices sit in the local range"></svg>
+      <div class="range-row">
+        <div id="g-range"></div>
+        <button class="btn" id="rangeFromComps">Take it from my comps</button>
       </div>
     </div>
 
@@ -985,8 +999,10 @@ const DEFAULTS = {
   buildMon:  12,
   holdMon:   18,
   rollUp:    0,
-  exitMode: "psf",
+  exitMode: "top",
   exitPsf:   0,
+  rangeLo:   0,
+  rangeHi:   0,
   ltvProp:   65,
   ltcFit:    65,
   rateProp:  5,
@@ -1155,6 +1171,8 @@ function migrate(st){
   if(!isFinite(+st.exitPrice)) st.exitPrice = Math.round(+st.purchase || 0);
   if(!isFinite(+st.holdMon))  st.holdMon  = Math.max(1, Math.round((+st.hold || 1.5) * 12));
   if(!isFinite(+st.rollUp))   st.rollUp   = 0;
+  if(!isFinite(+st.rangeLo))  st.rangeLo  = 0;
+  if(!isFinite(+st.rangeHi))  st.rangeHi  = 0;
   ["hold","exitCap","revMode","rentPsf","revTotal","revGrowth","vacancy","leaseUp",
    "opexMode","opexPct","opexPsf","amortYrs","io","capInt"].forEach(k => delete st[k]);
   return st;
@@ -1388,7 +1406,9 @@ const FIELDS = [
   {k:"ltcFit",   l:"Leverage on fit-out",   min:0,     max:95,     st:0.5,  suf:"%",      dec:1, g:"g-debt"},
   {k:"rateFit",  l:"Fit-out debt rate",     min:0,     max:20,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
   {k:"holdMon",  l:"Months, buying to sale", min:1,  max:120,    st:1,    suf:" months", dec:0, g:"g-exit"},
-  {k:"exitPsf",  l:"Sale price",            min:0,     max:6000,   st:5,    pre:"ccy", suf:" / sq ft", dec:0, g:"g-exit2"},
+  {k:"rangeLo",  l:"Bottom of the local range", min:0, max:12000,  st:5,    pre:"ccy", suf:" / sq ft", dec:0, g:"g-range", area:"rate"},
+  {k:"rangeHi",  l:"Top of the local range",    min:0, max:12000,  st:5,    pre:"ccy", suf:" / sq ft", dec:0, g:"g-range", area:"rate"},
+  {k:"exitPsf",  l:"Sale price",            min:0,     max:12000,  st:5,    pre:"ccy", suf:" / sq ft", dec:0, g:"g-exit2"},
   {k:"exitPrice",l:"Sale price",            min:0,     max:60000000,st:25000,pre:"ccy",   dec:0, g:"g-exit2"},
   {k:"saleCost", l:"Selling costs",         min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
 
@@ -1494,7 +1514,10 @@ function model(){
   const equity    = S.purchase + acqCosts + worksTotal + cashInt - totalDebt;
   const debtAtSale = totalDebt + rolled;
 
-  const salePrice = S.exitMode === "price" ? num0(S.exitPrice) : num0(S.exitPsf) * sqft;
+  /* Selling at the top of what the area pays for this kind of property is the
+     whole thesis, so it is the default basis rather than a figure to invent. */
+  const salePsfUsed = S.exitMode === "top" ? num0(S.rangeHi) : num0(S.exitPsf);
+  const salePrice = S.exitMode === "price" ? num0(S.exitPrice) : salePsfUsed * sqft;
   const saleCosts = salePrice * S.saleCost/100;
   const netSale   = salePrice - saleCosts - debtAtSale;
   const profit    = netSale - equity;
@@ -1508,6 +1531,9 @@ function model(){
   return {sqft, acqCosts, worksTotal, debtProp, debtWorks, totalDebt, debtAtSale,
           interest, intProp, intWorks, rolled, cashInt, totalCost, equity,
           works, hold, years, salePrice, saleCosts, netSale, profit, roe, annual,
+          salePsfUsed,
+          rangePos: (num0(S.rangeHi) > num0(S.rangeLo))
+            ? (S.purchase/sqft - num0(S.rangeLo)) / (num0(S.rangeHi) - num0(S.rangeLo)) : null,
           purchasePsf: S.purchase/sqft, worksPsf: worksTotal/sqft,
           allInPsf: totalCost/sqft, salePsf: salePrice/sqft,
           upliftOnCost: totalCost > 0 ? salePrice/totalCost - 1 : 0,
@@ -1703,6 +1729,85 @@ function niceTicks(min, max, count){
   return out;
 }
 
+/* The range the area actually pays for this kind of property, and where this
+   purchase sits inside it. Selling at the top is the thesis; this is the
+   picture of whether there is room for it. */
+function compRange(){
+  const hits = compRows().filter(matches).map(r => r.ppsf).sort((a,b) => a-b);
+  return hits.length >= 2 ? {lo:hits[0], hi:hits[hits.length-1], n:hits.length} : null;
+}
+function ensureRange(){
+  if(num0(S.rangeHi) > 0) return;
+  const r = compRange();
+  const per = AU().perSqft;
+  if(r){ S.rangeLo = r.lo/per; S.rangeHi = r.hi/per; }
+  else { const b = S.purchase/Math.max(1,S.sqft); S.rangeLo = b; S.rangeHi = b; }
+}
+
+function drawRangeChart(m){
+  const svg = document.getElementById("rangeChart");
+  if(!svg) return;
+  svg.innerHTML = "";
+  const W = svg.clientWidth || 780, H = 150;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+  const pad = {l:24, r:24}, iw = W - pad.l - pad.r, y = 92;
+  const per = AU().perSqft, unit = AU().short;
+  const lo = num0(S.rangeLo)*per, hi = num0(S.rangeHi)*per;
+  const buy = m.purchasePsf*per, sell = m.salePsfUsed*per || m.salePsf*per;
+
+  const a0 = Math.min(lo, buy, sell), b0 = Math.max(hi, buy, sell);
+  const padv = (b0-a0)*0.14 || Math.max(10, a0*0.1);
+  const a = a0-padv, b = b0+padv;
+  const X = v => pad.l + (v-a)/((b-a)||1)*iw;
+
+  el("rect",{x:X(lo), y:y-13, width:Math.max(2, X(hi)-X(lo)), height:26, rx:6,
+             fill:"var(--s1)","fill-opacity":.13, stroke:"var(--s1)","stroke-opacity":.3},svg);
+  el("line",{x1:pad.l,x2:W-pad.r,y1:y,y2:y,stroke:"var(--axis)","stroke-width":1},svg);
+  [[lo,"bottom",0],[hi,"top",1]].forEach(([v,lab,right]) => {
+    el("line",{x1:X(v),x2:X(v),y1:y-13,y2:y+13,stroke:"var(--s1)","stroke-width":2,"stroke-opacity":.55},svg);
+    el("text",{x:X(v), y:y+30, "text-anchor":right?"end":"start", fill:"var(--muted)","font-size":11},svg)
+      .textContent = `${C()}${nf(v,0)}`;
+    el("text",{x:X(v), y:y+44, "text-anchor":right?"end":"start", fill:"var(--muted)","font-size":10.5},svg)
+      .textContent = lab + " of the range";
+  });
+
+  if(sell > buy){
+    el("path",{d:`M${X(buy)} ${y-32} L${X(sell)} ${y-32}`, stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round"},svg);
+    el("path",{d:`M${X(sell)-7} ${y-37} L${X(sell)} ${y-32} L${X(sell)-7} ${y-27}`, fill:"none",
+               stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round","stroke-linejoin":"round"},svg);
+    el("text",{x:(X(buy)+X(sell))/2, y:y-41, "text-anchor":"middle", fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
+      .textContent = `+${C()}${nf(sell-buy,0)} a ${unit}`;
+  }
+  [[X(buy), buy, "You buy here", "var(--s2)"],
+   [X(sell), sell, "You sell here", sell >= buy ? "var(--good)" : "var(--crit)"]].forEach(([x,v,lab,col]) => {
+    el("circle",{cx:x, cy:y, r:7, fill:col, stroke:"var(--surface)","stroke-width":3},svg);
+    el("text",{x, y:y-54, "text-anchor":"middle", fill:"var(--ink)","font-size":12,"font-weight":640},svg)
+      .textContent = `${C()}${nf(v,0)}/${unit}`;
+    el("text",{x, y:y-68, "text-anchor":"middle", fill:"var(--muted)","font-size":10.5},svg).textContent = lab;
+  });
+}
+
+function renderRange(m){
+  const r = compRange(), per = AU().perSqft;
+  const pos = m.rangePos;
+  const where = pos === null ? "" :
+    pos <= 0 ? "at or below the bottom of it" :
+    pos >= 1 ? "at or above the top of it" :
+    pos < 0.34 ? `in the bottom third of it` :
+    pos < 0.67 ? `in the middle of it` : `in the top third of it`;
+  document.getElementById("rangeSub").textContent = r
+    ? `${r.n} comparable sales` : "range set by hand";
+  document.getElementById("rangeLead").textContent =
+    num0(S.rangeHi) <= num0(S.rangeLo)
+      ? `No range set yet. Enter the bottom and top of what this kind of property sells for locally, or take it from your comparable sales below — the sale price follows from it.`
+      : `You are buying at ${perArea(S.purchase)}, ${where} — a range of ` +
+        `${C()}${nf(num0(S.rangeLo)*per,0)} to ${C()}${nf(num0(S.rangeHi)*per,0)} a ${AU().short}. ` +
+        (S.exitMode === "top"
+          ? `Selling at the top gives ${money(m.salePrice)}.`
+          : `Selling at the top would give ${money(num0(S.rangeHi)*S.sqft)}; you have set ${money(m.salePrice)}.`);
+  drawRangeChart(m);
+}
 /* ---- chart 1: everything that goes out, against what comes back ---- */
 function drawCashChart(m){
   const svg = document.getElementById("cfChart");
@@ -1925,6 +2030,7 @@ function renderComps(m){
    8. RENDER
    ========================================================================== */
 function render(){
+  ensureRange();
   const m = model();
   FIELDS.forEach(f => { if(f.on !== "plan") syncField(f.k); });
 
@@ -1998,6 +2104,7 @@ function render(){
        <td class="${m.profit >= 0 ? "pos" : "neg"}">${money(m.profit)}</td>
        <td>${perArea(Math.abs(m.profit))}</td></tr>`;
 
+  renderRange(m);
   drawCashChart(m);
   renderComps(m);
 
@@ -2013,6 +2120,8 @@ function render(){
   h("holdMon",  m.annual === null ? "" : pct(m.annual,0)+" a year");
   h("rateProp", moneyC(m.intProp)+" over the hold");
   h("rateFit",  moneyC(m.intWorks)+" over the hold");
+  h("rangeLo",  "");
+  h("rangeHi",  S.exitMode === "top" ? moneyC(num0(S.rangeHi)*S.sqft)+" sale" : "");
   h("exitPsf",  moneyC(m.salePrice));
   h("exitPrice", perArea(m.salePrice));
   h("saleCost", moneyC(m.saleCosts));
@@ -2041,9 +2150,15 @@ document.getElementById("exitSeg").addEventListener("click", e => {
   /* switch without jolting the model: carry the sale price you already had */
   const m = model();
   if(b.dataset.exit === "price") S.exitPrice = clamp(F.exitPrice, Math.round(m.salePrice));
-  else S.exitPsf = clamp(F.exitPsf, Math.round(m.salePrice / Math.max(1, S.sqft)));
+  else if(b.dataset.exit === "psf") S.exitPsf = clamp(F.exitPsf, Math.round(m.salePrice / Math.max(1, S.sqft)));
   S.exitMode = b.dataset.exit;
   applyModes(); render();
+});
+document.getElementById("rangeFromComps").addEventListener("click", () => {
+  const r = compRange(), per = AU().perSqft;
+  if(!r){ alert("Add at least two comparable sales that match the filters below, then this can read the range off them."); return; }
+  S.rangeLo = r.lo/per; S.rangeHi = r.hi/per;
+  save(); render();
 });
 document.getElementById("capSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
