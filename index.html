@@ -53,6 +53,7 @@
 }
 
 *{box-sizing:border-box}
+[hidden]{display:none !important}   /* .dealwarn sets display:flex and would otherwise show empty */
 html,body{margin:0;padding:0}
 body{
   background:var(--plane); color:var(--ink);
@@ -1140,10 +1141,18 @@ function migrate(st){
   if(!st) return st;
   const sqft = +st.sqft > 0 ? +st.sqft : 1;
   if(st.exitMode !== "psf" && st.exitMode !== "price"){
-    if(isFinite(+st.exitPrice) && +st.exitPrice > 0){ st.exitMode = "price"; }
-    else { st.exitMode = "psf"; st.exitPsf = Math.round((+st.purchase || 0) / sqft); }
+    /* A property on the old cap-rate exit never used exitPrice, so whatever is
+       sitting in it is a default nobody chose — carrying it over invents a sale
+       price out of nothing. Only a mode explicitly set to "price" means the
+       figure beside it was anybody's actual view. Everything else falls back to
+       the price paid: a flat sale, which claims nothing and reads as a loss
+       until it is set. */
+    st.exitMode = "psf";
+    st.exitPsf  = Math.round((+st.purchase || 0) / sqft);
+    delete st.exitPrice;
   }
-  if(!isFinite(+st.exitPsf))  st.exitPsf  = Math.round((+st.purchase || 0) / sqft);
+  if(!isFinite(+st.exitPsf))   st.exitPsf   = Math.round((+st.purchase || 0) / sqft);
+  if(!isFinite(+st.exitPrice)) st.exitPrice = Math.round(+st.purchase || 0);
   if(!isFinite(+st.holdMon))  st.holdMon  = Math.max(1, Math.round((+st.hold || 1.5) * 12));
   if(!isFinite(+st.rollUp))   st.rollUp   = 0;
   ["hold","exitCap","revMode","rentPsf","revTotal","revGrowth","vacancy","leaseUp",
