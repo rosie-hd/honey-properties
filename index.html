@@ -262,6 +262,8 @@ details.imp summary:hover{color:var(--ink)}
 .dragging,.dragging *{cursor:ew-resize !important;user-select:none !important}
 
 .deal-hero .hero{margin-bottom:0}
+.hurdle{background:var(--surface-2);border-radius:8px;padding:9px 12px;margin-top:-4px}
+.hurdle b{color:var(--ink)}
 .range-row{margin-top:16px;display:flex;gap:22px;align-items:flex-end;flex-wrap:wrap}
 .range-row #g-range{display:flex;gap:22px;flex-wrap:wrap}
 .range-row .field{margin-bottom:0;width:184px}
@@ -309,6 +311,13 @@ details.imp summary:hover{color:var(--ink)}
   background:var(--surface-2);border-radius:9px;padding:14px;margin:2px 0 8px;
 }
 .miscgrid .field{margin-bottom:0}
+.seg-wrap{flex-wrap:wrap;max-width:200px;justify-content:flex-end}
+.sdltline{
+  background:var(--surface-2);border-radius:8px;padding:9px 11px;margin:2px 0 10px;
+  font-size:12px;color:var(--ink-2);line-height:1.5;
+}
+.sdltline b{color:var(--ink);font-family:var(--display);font-size:15px;font-weight:600;display:block}
+.sdltline a{color:var(--honey)}
 .seg.tiny{padding:1px;border-radius:6px;margin-top:2px}
 .seg.tiny button{font-size:10.5px;padding:3px 7px;border-radius:5px}
 .dealwarn{
@@ -843,6 +852,26 @@ table.mini tr:last-child td{border-bottom:none}
           </div>
         </div>
         <div id="g-acq"></div>
+        <div class="toggle-row">
+          <span>Property is</span>
+          <div class="seg" id="sdltTypeSeg" role="group" aria-label="Property type for stamp duty">
+            <button data-st="resi" aria-pressed="true">residential</button>
+            <button data-st="comm" aria-pressed="false">commercial</button>
+          </div>
+        </div>
+        <div class="toggle-row" id="sdltCaseRow">
+          <span>Buying as</span>
+          <div class="seg seg-wrap" id="sdltCaseSeg" role="group" aria-label="Who is buying">
+            <button data-sc="extra" aria-pressed="true">an extra property</button>
+            <button data-sc="only" aria-pressed="false">my only one</button>
+            <button data-sc="company" aria-pressed="false">a company</button>
+          </div>
+        </div>
+        <div class="sdltline" id="sdltLine"></div>
+        <details class="imp" id="feesBlock">
+          <summary>The other buying costs</summary>
+          <div id="g-fees"></div>
+        </details>
       </section>
 
       <section class="blk">
@@ -907,6 +936,7 @@ table.mini tr:last-child td{border-bottom:none}
     <div class="card">
       <h2>Where this sits in the local range<span class="rt" id="rangeSub"></span></h2>
       <p class="sub" id="rangeLead">—</p>
+      <p class="sub hurdle" id="rangeHurdle">—</p>
       <svg id="rangeChart" class="chart" role="img" aria-label="Where the purchase and sale prices sit in the local range"></svg>
       <div class="range-row">
         <div id="g-range"></div>
@@ -993,7 +1023,15 @@ const DEFAULTS = {
   status:"pipeline", actualIn:0, actualOut:0,
   sqft:      28000,
   purchase:  5000000,
-  acqPct:    5,
+  sdltType: "resi",      /* resi | comm */
+  sdltCase: "extra",     /* extra | only | company */
+  sdltNonRes: 0,
+  feeLegal:     2500,
+  feeSurvey:    1200,
+  feeAgent:        0,
+  feeValuation:  750,
+  feeArrange:      1,    /* % of the loan */
+  feeOther:     1500,
   fitOut:    3000000,
   contPct:   10,
   buildMon:  12,
@@ -1171,6 +1209,10 @@ function migrate(st){
   if(!isFinite(+st.exitPrice)) st.exitPrice = Math.round(+st.purchase || 0);
   if(!isFinite(+st.holdMon))  st.holdMon  = Math.max(1, Math.round((+st.hold || 1.5) * 12));
   if(!isFinite(+st.rollUp))   st.rollUp   = 0;
+  if(!st.sdltType) st.sdltType = "resi";
+  if(!st.sdltCase) st.sdltCase = "extra";
+  if(!isFinite(+st.feeArrange)) st.feeArrange = 1;
+  delete st.acqPct;
   if(!isFinite(+st.rangeLo))  st.rangeLo  = 0;
   if(!isFinite(+st.rangeHi))  st.rangeHi  = 0;
   ["hold","exitCap","revMode","rentPsf","revTotal","revGrowth","vacancy","leaseUp",
@@ -1395,7 +1437,12 @@ const FIELDS = [
   // key, label, min, max, step, prefix, suffix, decimals, group
   {k:"sqft",     l:"Area",                  min:200,   max:2000000,st:100,  suf:" sq ft", dec:0, g:"g-acq", area:"size"},
   {k:"purchase", l:"Purchase price",        min:100000,max:20000000,st:25000,pre:"ccy",   dec:0, g:"g-acq"},
-  {k:"acqPct",   l:"Acquisition costs",     min:0,     max:15,     st:0.25, suf:"%",      dec:2, g:"g-acq"},
+  {k:"feeLegal",     l:"Legal fees",            min:0, max:200000, st:250, pre:"ccy", dec:0, g:"g-fees"},
+  {k:"feeSurvey",    l:"Survey",                min:0, max:100000, st:100, pre:"ccy", dec:0, g:"g-fees"},
+  {k:"feeAgent",     l:"Buying agent",          min:0, max:500000, st:250, pre:"ccy", dec:0, g:"g-fees"},
+  {k:"feeValuation", l:"Valuation",             min:0, max:100000, st:100, pre:"ccy", dec:0, g:"g-fees"},
+  {k:"feeArrange",   l:"Lender arrangement fee",min:0, max:5,      st:0.1, suf:"% of the loan", dec:2, g:"g-fees"},
+  {k:"feeOther",     l:"Anything else",         min:0, max:500000, st:250, pre:"ccy", dec:0, g:"g-fees"},
 
   {k:"fitOut",   l:"Fit-out budget",        min:0,     max:12000000,st:25000,pre:"ccy",   dec:0, g:"g-fit"},
   {k:"contPct",  l:"Contingency",           min:0,     max:30,     st:0.5,  suf:"%",      dec:1, g:"g-fit"},
@@ -1488,9 +1535,49 @@ function irr(cfs){
 }
 
 const num0 = v => isFinite(+v) ? +v : 0;
+
+/* Stamp duty is the whole reason buying costs are not a flat percentage: on
+   residential it runs in bands to 12%, a second property adds 5% on the entire
+   price, and a company with no relief pays 17% flat on anything over £500,000.
+   Commercial tops out at 5%. Rates per gov.uk, bands applied to slices. */
+function bandTax(price, bands){
+  let t = 0, prev = 0;
+  for(const [cap, rate] of bands){
+    if(price <= prev) break;
+    t += (Math.min(price, cap) - prev) * rate;
+    prev = cap;
+  }
+  return t;
+}
+const SDLT_RESI = [[125000,0],[250000,0.02],[925000,0.05],[1500000,0.10],[Infinity,0.12]];
+const SDLT_COMM = [[150000,0],[250000,0.02],[Infinity,0.05]];
+
+function sdltOn(price){
+  price = num0(price);
+  if(price <= 0) return 0;
+  if(S.sdltType === "comm") return bandTax(price, SDLT_COMM);
+  let t;
+  if(S.sdltCase === "company" && price > 500000){
+    t = price * 0.17;                       /* flat, not banded */
+  } else {
+    t = bandTax(price, SDLT_RESI);
+    if(S.sdltCase !== "only") t += price * 0.05;   /* additional dwelling */
+  }
+  if(S.sdltNonRes) t += price * 0.02;
+  return t;
+}
+function buyingCosts(){
+  const loan = num0(S.purchase) * num0(S.ltvProp)/100;
+  const sdlt = sdltOn(S.purchase);
+  const arrange = loan * num0(S.feeArrange)/100;
+  const fees = num0(S.feeLegal) + num0(S.feeSurvey) + num0(S.feeAgent)
+             + num0(S.feeValuation) + arrange + num0(S.feeOther);
+  return {sdlt, arrange, fees, total: sdlt + fees};
+}
 function model(){
   const sqft = Math.max(1, num0(S.sqft) || 1);
-  const acqCosts  = S.purchase * S.acqPct/100;
+  const bc = buyingCosts();
+  const acqCosts  = bc.total;
   const worksTotal = S.fitOut * (1 + S.contPct/100);
   const debtProp  = S.purchase * S.ltvProp/100;
   const debtWorks = worksTotal * S.ltcFit/100;
@@ -1528,7 +1615,8 @@ function model(){
   const annual    = (equity > 0 && netSale > 0 && years > 0)
                   ? Math.pow(netSale/equity, 1/years) - 1 : null;
 
-  return {sqft, acqCosts, worksTotal, debtProp, debtWorks, totalDebt, debtAtSale,
+  return {sqft, acqCosts, bc, acqPctOfPrice: S.purchase > 0 ? acqCosts/S.purchase : 0,
+          worksTotal, debtProp, debtWorks, totalDebt, debtAtSale,
           interest, intProp, intWorks, rolled, cashInt, totalCost, equity,
           works, hold, years, salePrice, saleCosts, netSale, profit, roe, annual,
           salePsfUsed,
@@ -1690,6 +1778,10 @@ function applyModes(){
   show("exitPrice", S.exitMode === "price");
   segSet("capSeg","cap", String(S.rollUp));
   segSet("exitSeg","exit", S.exitMode);
+  segSet("sdltTypeSeg","st", S.sdltType);
+  segSet("sdltCaseSeg","sc", S.sdltCase);
+  const cr = document.getElementById("sdltCaseRow");
+  if(cr) cr.style.display = S.sdltType === "resi" ? "" : "none";
   segSet("areaSeg","area", S.areaUnit);
   segSet("ccySeg","ccy", S.ccy);
 }
@@ -1744,6 +1836,22 @@ function ensureRange(){
   else { const b = S.purchase/Math.max(1,S.sqft); S.rangeLo = b; S.rangeHi = b; }
 }
 
+/* The sale rate this deal has to reach. Everything bought, spent and borrowed
+   has to come back out of the sale, so there is a floor below which the whole
+   exercise loses money however good the building is. */
+function hurdle(targetRoe){
+  const keepMode = S.exitMode, keepPsf = S.exitPsf;
+  S.exitMode = "psf";
+  let lo = 0, hi = 60000;
+  for(let i=0; i<80; i++){
+    const mid = (lo+hi)/2; S.exitPsf = mid;
+    if(model().roe < targetRoe) lo = mid; else hi = mid;
+  }
+  const v = (lo+hi)/2;
+  S.exitMode = keepMode; S.exitPsf = keepPsf;
+  return v;
+}
+
 function drawRangeChart(m){
   const svg = document.getElementById("rangeChart");
   if(!svg) return;
@@ -1756,7 +1864,8 @@ function drawRangeChart(m){
   const lo = num0(S.rangeLo)*per, hi = num0(S.rangeHi)*per;
   const buy = m.purchasePsf*per, sell = m.salePsfUsed*per || m.salePsf*per;
 
-  const a0 = Math.min(lo, buy, sell), b0 = Math.max(hi, buy, sell);
+  const be = hurdle(0)*per, dbl = hurdle(1)*per;
+  const a0 = Math.min(lo, buy, sell), b0 = Math.max(hi, buy, sell, be);
   const padv = (b0-a0)*0.14 || Math.max(10, a0*0.1);
   const a = a0-padv, b = b0+padv;
   const X = v => pad.l + (v-a)/((b-a)||1)*iw;
@@ -1770,6 +1879,14 @@ function drawRangeChart(m){
       .textContent = `${C()}${nf(v,0)}`;
     el("text",{x:X(v), y:y+44, "text-anchor":right?"end":"start", fill:"var(--muted)","font-size":10.5},svg)
       .textContent = lab + " of the range";
+  });
+
+  /* break-even and the doubling line, so the range can be read against them */
+  [[be, "break even", "var(--crit)"], [dbl, "double your money", "var(--good)"]].forEach(([v,lab,col]) => {
+    if(!isFinite(v) || v < a || v > b) return;
+    el("line",{x1:X(v),x2:X(v),y1:y-20,y2:y+20,stroke:col,"stroke-width":1.5,"stroke-opacity":.75},svg);
+    el("text",{x:X(v), y:y+58, "text-anchor":"middle", fill:col,"font-size":10.5,"font-weight":600},svg)
+      .textContent = lab;
   });
 
   if(sell > buy){
@@ -1806,6 +1923,14 @@ function renderRange(m){
         (S.exitMode === "top"
           ? `Selling at the top gives ${money(m.salePrice)}.`
           : `Selling at the top would give ${money(num0(S.rangeHi)*S.sqft)}; you have set ${money(m.salePrice)}.`);
+  const be = hurdle(0)*per, dbl = hurdle(1)*per, buy = m.purchasePsf*per;
+  const hEl = document.getElementById("rangeHurdle");
+  if(hEl) hEl.innerHTML =
+    `<span class="${m.salePsfUsed*per >= be ? "pos" : "neg"}">Break even at ${C()}${nf(be,0)} a ${AU().short}</span>
+     &middot; <span class="${m.salePsfUsed*per >= dbl ? "pos" : "neg"}">double your money at ${C()}${nf(dbl,0)}</span>
+     &middot; that is ${(be/buy).toFixed(2)}&times; and ${(dbl/buy).toFixed(2)}&times; what you are paying.
+     To double at this works budget you want to buy at or under
+     <b>${C()}${nf(num0(S.rangeHi)*per / (dbl/buy), 0)} a ${AU().short}</b>.`;
   drawRangeChart(m);
 }
 /* ---- chart 1: everything that goes out, against what comes back ---- */
@@ -2088,7 +2213,7 @@ function render(){
     <td>${v === 0 ? "" : perArea(Math.abs(v))}</td></tr>`;
   document.querySelector("#cfTable tbody").innerHTML =
     row("Purchase price", S.purchase, "", nf(S.sqft,0) + " sq ft") +
-    row("Buying costs", m.acqCosts, "", nf(S.acqPct,2) + "% of the price") +
+    row("Buying costs", m.acqCosts, "", `${money(m.bc.sdlt)} stamp duty + ${money(m.bc.fees)} fees · ${pct(m.acqPctOfPrice,2)} of the price`) +
     row("Works", m.worksTotal, "", nf(S.contPct,1) + "% contingency included") +
     row("Interest", m.interest, "", `${m.hold} months on ${moneyC(m.totalDebt)}`) +
     row("Total cost", m.totalCost, "exit") +
@@ -2114,12 +2239,27 @@ function render(){
   h("fitOut",   perArea(m.worksTotal)+" incl. contingency");
   h("ltvProp",  moneyC(m.debtProp)+" borrowed");
   h("ltcFit",   moneyC(m.debtWorks)+" borrowed");
-  h("acqPct",   moneyC(m.acqCosts));
+  h("feeArrange", moneyC(m.bc.arrange));
   h("contPct",  moneyC(m.worksTotal - S.fitOut));
   h("buildMon", moneyC(m.intWorks)+" of works interest");
   h("holdMon",  m.annual === null ? "" : pct(m.annual,0)+" a year");
   h("rateProp", moneyC(m.intProp)+" over the hold");
   h("rateFit",  moneyC(m.intWorks)+" over the hold");
+  const bc = m.bc;
+  const sl = document.getElementById("sdltLine");
+  if(sl){
+    const rate = S.purchase > 0 ? bc.sdlt/S.purchase : 0;
+    const how = S.sdltType === "comm"
+      ? "commercial bands, 0 / 2 / 5%"
+      : S.sdltCase === "company" && S.purchase > 500000
+        ? "17% flat — a company with no relief"
+        : S.sdltCase === "only"
+          ? "residential bands, 0 / 2 / 5 / 10 / 12%"
+          : "residential bands plus 5% on the whole price for an additional dwelling";
+    sl.innerHTML = `<b>${money(bc.sdlt)} stamp duty</b>${pct(rate,2)} of the price &middot; ${how}.
+      Other costs ${money(bc.fees)}. <a href="https://www.gov.uk/stamp-duty-land-tax" target="_blank"
+      rel="noopener noreferrer">Check your case on gov.uk</a> — reliefs and surcharges vary.`;
+  }
   h("rangeLo",  "");
   h("rangeHi",  S.exitMode === "top" ? moneyC(num0(S.rangeHi)*S.sqft)+" sale" : "");
   h("exitPsf",  moneyC(m.salePrice));
@@ -2153,6 +2293,14 @@ document.getElementById("exitSeg").addEventListener("click", e => {
   else if(b.dataset.exit === "psf") S.exitPsf = clamp(F.exitPsf, Math.round(m.salePrice / Math.max(1, S.sqft)));
   S.exitMode = b.dataset.exit;
   applyModes(); render();
+});
+document.getElementById("sdltTypeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  S.sdltType = b.dataset.st; applyModes(); render();
+});
+document.getElementById("sdltCaseSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  S.sdltCase = b.dataset.sc; applyModes(); render();
 });
 document.getElementById("rangeFromComps").addEventListener("click", () => {
   const r = compRange(), per = AU().perSqft;
