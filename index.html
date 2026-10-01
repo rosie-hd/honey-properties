@@ -189,6 +189,20 @@ th,td{padding:7px 9px;text-align:right;white-space:nowrap}
 th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--axis)}
 th:first-child,td:first-child{text-align:left}
 tbody tr:not(:last-child) td{border-bottom:1px solid var(--grid)}
+#cfTable td:first-child{font-family:var(--body);font-size:13px}
+#cfTable .rn{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+#cfTable td.gap{height:10px;border-bottom:none !important}
+#cfTable tr.result-row td{
+  border-top:1px solid color-mix(in srgb,var(--good) 45%,transparent);
+  border-bottom:1px solid color-mix(in srgb,var(--good) 45%,transparent) !important;
+  background:color-mix(in srgb,var(--good) 8%,var(--surface));
+  font-size:16px;font-weight:640;padding-top:12px;padding-bottom:12px;
+}
+#cfTable tr.result-row.loss td{
+  border-color:color-mix(in srgb,var(--crit) 45%,transparent);
+  background:color-mix(in srgb,var(--crit) 8%,var(--surface));
+}
+#cfTable tr.result-row td:first-child{font-size:15px}
 tbody tr:hover td{background:var(--surface-2)}
 tr.exit td{font-weight:640;border-top:1px solid var(--axis)}
 tr.exit td:first-child{color:var(--s2)}
@@ -836,50 +850,22 @@ table.mini tr:last-child td{border-bottom:none}
         <h2>Debt</h2>
         <div id="g-debt"></div>
         <div class="toggle-row">
-          <span>Interest only</span>
-          <div class="seg" id="ioSeg" role="group" aria-label="Amortisation">
-            <button data-io="1" aria-pressed="true">Yes</button>
-            <button data-io="0" aria-pressed="false">Amortise</button>
-          </div>
-        </div>
-        <div id="g-debt2"></div>
-        <div class="toggle-row">
-          <span>Fund build interest with cash</span>
-          <div class="seg" id="capSeg" role="group" aria-label="Construction interest">
-            <button data-cap="1" aria-pressed="true">Cash</button>
-            <button data-cap="0" aria-pressed="false">Ignore</button>
+          <span>Interest</span>
+          <div class="seg" id="capSeg" role="group" aria-label="How interest is paid">
+            <button data-cap="0" aria-pressed="true">paid monthly</button>
+            <button data-cap="1" aria-pressed="false">rolled up</button>
           </div>
         </div>
       </section>
 
       <section class="blk">
-        <h2>Income &amp; operations</h2>
-        <div class="toggle-row">
-          <span>Revenue basis</span>
-          <div class="seg" id="revSeg" role="group" aria-label="Revenue basis">
-            <button data-rev="psf" aria-pressed="true">Per sq ft</button>
-            <button data-rev="total" aria-pressed="false">Total</button>
-          </div>
-        </div>
-        <div id="g-inc"></div>
-        <div class="toggle-row">
-          <span>Operating costs</span>
-          <div class="seg" id="opexSeg" role="group" aria-label="Opex basis">
-            <button data-opex="pct" aria-pressed="true">% of revenue</button>
-            <button data-opex="psf" aria-pressed="false">Per sq ft</button>
-          </div>
-        </div>
-        <div id="g-opex"></div>
-      </section>
-
-      <section class="blk">
-        <h2>Hold &amp; exit</h2>
+        <h2>Sale</h2>
         <div id="g-exit"></div>
         <div class="toggle-row">
-          <span>Exit value</span>
-          <div class="seg" id="exitSeg" role="group" aria-label="How the exit is valued">
-            <button data-exit="cap" aria-pressed="true">Cap rate</button>
-            <button data-exit="price" aria-pressed="false">Sale price</button>
+          <span>Sale price set as</span>
+          <div class="seg" id="exitSeg" role="group" aria-label="How the sale price is set">
+            <button data-exit="psf" aria-pressed="true">a rate</button>
+            <button data-exit="price" aria-pressed="false">a total</button>
           </div>
         </div>
         <div id="g-exit2"></div>
@@ -898,48 +884,31 @@ table.mini tr:last-child td{border-bottom:none}
           <div class="note" id="heroNote">—</div>
         </div>
         <div class="side">
-          <div><div class="lab">IRR (levered)</div><div class="v2" id="kIrr">—</div></div>
-          <div><div class="lab">Equity multiple</div><div class="v2" id="kMult">—</div></div>
-          <div><div class="lab">Avg cash-on-cash</div><div class="v2" id="kCoc">—</div></div>
+          <div><div class="lab">Profit</div><div class="v2" id="kIrr">—</div></div>
+          <div><div class="lab">Return on cash</div><div class="v2" id="kMult">—</div></div>
+          <div><div class="lab">A year, compounded</div><div class="v2" id="kCoc">—</div></div>
         </div>
       </div>
       <div class="tiles">
         <div class="tile"><div class="lab">Total project cost</div><div class="v" id="kCost">—</div><div class="d" id="kCostPsf">—</div></div>
         <div class="tile"><div class="lab">Total debt</div><div class="v" id="kDebt">—</div><div class="d" id="kLtc">—</div></div>
-        <div class="tile"><div class="lab">Stabilised NOI</div><div class="v" id="kNoi">—</div><div class="d" id="kNoiPsf">—</div></div>
-        <div class="tile"><div class="lab">Yield on cost</div><div class="v" id="kYoc">—</div><div class="d" id="kSpread">—</div></div>
-        <div class="tile"><div class="lab">Exit value</div><div class="v" id="kExit">—</div><div class="d" id="kExitPsf">—</div></div>
-        <div class="tile"><div class="lab">DSCR year 1 / stab.</div><div class="v" id="kDscr">—</div><div class="d" id="kBreak">—</div></div>
+        <div class="tile"><div class="lab">Sale price</div><div class="v" id="kNoi">—</div><div class="d" id="kNoiPsf">—</div></div>
+        <div class="tile"><div class="lab">Uplift on cost</div><div class="v" id="kYoc">—</div><div class="d" id="kSpread">—</div></div>
+        <div class="tile"><div class="lab">Profit</div><div class="v" id="kExit">—</div><div class="d" id="kExitPsf">—</div></div>
+        <div class="tile"><div class="lab">Interest over the hold</div><div class="v" id="kDscr">—</div><div class="d" id="kBreak">—</div></div>
       </div>
     </div>
 
     <div class="card">
-      <h2>Operating cash flow after debt<span class="rt" id="chartSub"></span></h2>
-      <p class="sub">Rent and trading income less operating costs and debt service — the cash that lands in your
-      pocket each year you hold it. Cash-on-cash is that figure over your equity. The sale is shown separately below.</p>
-      <svg id="cfChart" class="chart" role="img" aria-label="Operating cash flow after debt for each year of the hold"></svg>
+      <h2>What you spend against what you sell for<span class="rt" id="chartSub"></span></h2>
+      <p class="sub">Everything that leaves your hands on the left, what comes back on the right. The gap is the profit.</p>
+      <svg id="cfChart" class="chart" role="img" aria-label="Total cost against sale price"></svg>
     </div>
 
     <div class="card">
-      <h2>Cumulative cash back, including the sale</h2>
-      <div class="legend">
-        <span><i style="background:var(--s1)"></i>Cash returned from operations</span>
-        <span><i style="background:var(--s2)"></i>Net sale proceeds at exit</span>
-        <span><i style="background:var(--axis)"></i>Equity you put in</span>
-      </div>
-      <svg id="cumChart" class="chart" role="img" aria-label="Cumulative cash returned against equity invested"></svg>
-    </div>
-
-    <div class="card">
-      <h2>Year by year</h2>
+      <h2>Am I making or losing money<span class="rt" id="tblSub"></span></h2>
       <div class="tbl-wrap">
-        <table id="cfTable">
-          <thead><tr>
-            <th>Year</th><th>Revenue</th><th>NOI</th><th>Debt service</th>
-            <th>Cash flow</th><th>Cash-on-cash</th><th>Cumulative cash</th><th>Cum. % of equity</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+        <table id="cfTable"><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -1013,26 +982,14 @@ const DEFAULTS = {
   fitOut:    3000000,
   contPct:   10,
   buildMon:  12,
+  holdMon:   18,
+  rollUp:    0,
+  exitMode: "psf",
+  exitPsf:   0,
   ltvProp:   65,
   ltcFit:    65,
   rateProp:  5,
   rateFit:   8,
-  amortYrs:  25,
-  io:        1,
-  capInt:    1,
-  revMode:  "psf",
-  rentPsf:   36,
-  revTotal:  1008000,
-  revGrowth: 3,
-  vacancy:   5,
-  leaseUp:   9,
-  opexMode: "pct",
-  opexPct:   32,
-  opexPsf:   19,
-  hold:      7,
-  exitMode: "cap",
-  exitCap:   6.25,
-  exitPrice: 9000000,
   saleCost:  2,
   // comps filters
   cSqftTol:  25,
@@ -1174,6 +1131,26 @@ function newId(){ return "p" + Date.now().toString(36) + Math.random().toString(
 function esc(t){ return String(t == null ? "" : t).replace(/[&<>"']/g, c =>
   ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]); }
 
+/* Properties saved while this modelled rental income carry an exit cap rate and
+   no sale price. Left alone they resolve to a sale of undefined, so the whole
+   page reads NaN. Convert each one to a sale price it can actually use: the
+   cap-rate exit it already implied where that is recoverable, otherwise the
+   price paid, which claims nothing and shows plainly as a loss until set. */
+function migrate(st){
+  if(!st) return st;
+  const sqft = +st.sqft > 0 ? +st.sqft : 1;
+  if(st.exitMode !== "psf" && st.exitMode !== "price"){
+    if(isFinite(+st.exitPrice) && +st.exitPrice > 0){ st.exitMode = "price"; }
+    else { st.exitMode = "psf"; st.exitPsf = Math.round((+st.purchase || 0) / sqft); }
+  }
+  if(!isFinite(+st.exitPsf))  st.exitPsf  = Math.round((+st.purchase || 0) / sqft);
+  if(!isFinite(+st.holdMon))  st.holdMon  = Math.max(1, Math.round((+st.hold || 1.5) * 12));
+  if(!isFinite(+st.rollUp))   st.rollUp   = 0;
+  ["hold","exitCap","revMode","rentPsf","revTotal","revGrowth","vacancy","leaseUp",
+   "opexMode","opexPct","opexPsf","amortYrs","io","capInt"].forEach(k => delete st[k]);
+  return st;
+}
+
 function blankProject(seed){
   return {id:newId(), created:Date.now(), updated:Date.now(),
           s:Object.assign({}, DEFAULTS, seed || {}),
@@ -1236,7 +1213,7 @@ function save(){
    money formatters all read the live S. */
 function withProject(p, fn){
   const keepS = S, keepC = COMPS;
-  S = Object.assign({}, DEFAULTS, p.s);
+  S = migrate(Object.assign({}, DEFAULTS, p.s));
   COMPS = Array.isArray(p.comps) ? p.comps : [];
   try{ return fn(); } finally{ S = keepS; COMPS = keepC; }
 }
@@ -1253,7 +1230,7 @@ function openProject(id, pushHash){
   const p = STORE.projects.find(x => x.id === id);
   if(!p) return;
   STORE.activeId = id;
-  S = Object.assign({}, DEFAULTS, p.s);
+  S = migrate(Object.assign({}, DEFAULTS, p.s));
   COMPS = Array.isArray(p.comps) ? p.comps : [];
   saveStore();
   paintProject();
@@ -1296,6 +1273,18 @@ function ago(ts){
   return new Date(ts).toLocaleDateString(undefined,{day:"numeric",month:"short"});
 }
 
+function costVsSale(m){
+  const W = 200, H = 28;
+  const safe = v => isFinite(v) && v > 0 ? v : 0;
+  const top = Math.max(safe(m.totalCost), safe(m.salePrice), 1);
+  const w = v => Math.max(0, (safe(v)/top) * W);
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <rect x="0" y="2"  width="${w(m.totalCost).toFixed(1)}" height="11" rx="2" fill="var(--s1)"/>
+    <rect x="0" y="15" width="${w(Math.max(0,m.salePrice - m.saleCosts)).toFixed(1)}" height="11" rx="2"
+          fill="${m.profit >= 0 ? "var(--good)" : "var(--crit)"}"/>
+  </svg>`;
+}
+
 function sparkline(vals){
   const w = 200, h = 28, zero = h/2;
   const hi = Math.max(...vals.map(v => Math.abs(v)), 1);
@@ -1318,7 +1307,7 @@ function renderProjects(){
 
   grid.innerHTML = items.map(p => withProject(p, () => {
     const m = model();
-    const irrTxt = m.irr === null ? "n/a" : pct(m.irr,1);
+    const annTxt = m.annual === null ? "—" : pct(m.annual,0);
     return `<article class="proj" data-id="${p.id}" tabindex="0" role="button"
               aria-label="Open ${esc(S.name || "Untitled property")}">
       <header>
@@ -1330,12 +1319,12 @@ function renderProjects(){
       </header>
       <div class="proj-stats">
         <div><span>Cash in</span><b>${moneyC(m.equity)}</b></div>
-        <div><span>IRR</span><b class="${m.irr === null ? "" : m.irr >= 0 ? "pos" : "neg"}">${irrTxt}</b></div>
-        <div><span>Purchase</span><b>${moneyC(S.purchase)}</b></div>
-        <div><span>All-in</span><b>${money(m.totalCost/Math.max(1,S.sqft),0)}/sf</b></div>
+        <div><span>Return</span><b class="${m.roe >= 0 ? "pos" : "neg"}">${pct(m.roe,0)}</b></div>
+        <div><span>Profit</span><b class="${m.profit >= 0 ? "pos" : "neg"}">${moneyC(m.profit)}</b></div>
+        <div><span>A year</span><b>${annTxt}</b></div>
       </div>
-      ${sparkline(m.years.map(r => r.cf))}
-      <footer>${nf(S.sqft/AU().perSqft, AU().dec)}${AU().suf} &middot; ${m.hold}-year hold &middot; edited ${ago(p.updated)}</footer>
+      ${costVsSale(m)}
+      <footer>${nf(S.sqft/AU().perSqft, AU().dec)}${AU().suf} &middot; ${m.hold} months &middot; edited ${ago(p.updated)}</footer>
     </article>`;
   })).join("");
 
@@ -1389,21 +1378,10 @@ const FIELDS = [
   {k:"rateProp", l:"Property debt rate",    min:0,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
   {k:"ltcFit",   l:"Leverage on fit-out",   min:0,     max:95,     st:0.5,  suf:"%",      dec:1, g:"g-debt"},
   {k:"rateFit",  l:"Fit-out debt rate",     min:0,     max:20,     st:0.05, suf:"%",      dec:2, g:"g-debt"},
-  {k:"amortYrs", l:"Amortisation period",   min:5,     max:40,     st:1,    suf:" years", dec:0, g:"g-debt2"},
-
-  {k:"rentPsf",  l:"Stabilised revenue",    min:0,     max:400,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-inc", area:"rate"},
-  {k:"revTotal", l:"Stabilised revenue",    min:0,     max:20000000,st:10000,pre:"ccy",  dec:0, g:"g-inc"},
-  {k:"revGrowth",l:"Revenue growth p.a.",   min:-5,    max:12,     st:0.25, suf:"%",      dec:2, g:"g-inc"},
-  {k:"vacancy",  l:"Vacancy / credit loss", min:0,     max:40,     st:0.5,  suf:"%",      dec:1, g:"g-inc"},
-  {k:"leaseUp",  l:"Lease-up to stabilised",min:0,     max:48,     st:1,    suf:" months",dec:0, g:"g-inc"},
-
-  {k:"opexPct",  l:"Operating costs",       min:0,     max:80,     st:0.5,  suf:"% of revenue", dec:1, g:"g-opex"},
-  {k:"opexPsf",  l:"Operating costs",       min:0,     max:120,    st:0.5,  pre:"ccy", suf:" / sq ft", dec:2, g:"g-opex", area:"rate"},
-
-  {k:"hold",     l:"Hold period",           min:1,     max:25,     st:1,    suf:" years", dec:0, g:"g-exit"},
-  {k:"exitCap",  l:"Exit cap rate",         min:2,     max:15,     st:0.05, suf:"%",      dec:2, g:"g-exit2"},
+  {k:"holdMon",  l:"Months, buying to sale", min:1,  max:120,    st:1,    suf:" months", dec:0, g:"g-exit"},
+  {k:"exitPsf",  l:"Sale price",            min:0,     max:6000,   st:5,    pre:"ccy", suf:" / sq ft", dec:0, g:"g-exit2"},
   {k:"exitPrice",l:"Sale price",            min:0,     max:60000000,st:25000,pre:"ccy",   dec:0, g:"g-exit2"},
-  {k:"saleCost", l:"Sale costs",            min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
+  {k:"saleCost", l:"Selling costs",         min:0,     max:10,     st:0.25, suf:"%",      dec:2, g:"g-exit2"},
 
   {k:"purchase_d",  l:"Purchase price",      min:250000, max:30000000, st:50000, pre:"ccy", dec:0, g:"d-price", on:"deal", src:"purchase", compact:1},
   {k:"sqft_d",      l:"Floor area",          min:500,    max:500000,  st:250,   suf:" sq ft", dec:0, g:"d-area", on:"deal", src:"sqft", compact:1},
@@ -1469,17 +1447,6 @@ const pct = (v,d=1) => (isFinite(v)? (v*100).toFixed(d) : "—") + "%";
 /* ==========================================================================
    4. THE MODEL
    ========================================================================== */
-function rampFactor(year, leaseUpMonths){
-  if(leaseUpMonths <= 0) return 1;
-  const L = leaseUpMonths, a = (year-1)*12, b = year*12;
-  const Fint = m => m <= L ? (m*m)/(2*L) : (L/2) + (m - L);
-  return (Fint(b) - Fint(a)) / 12;
-}
-function pmt(principal, rate, years){
-  if(principal <= 0) return 0;
-  if(rate <= 0) return principal / years;
-  return principal * rate / (1 - Math.pow(1+rate, -years));
-}
 function irr(cfs){
   const npv = r => cfs.reduce((s,c,i) => s + c/Math.pow(1+r, i), 0);
   let lo = -0.9999, hi = 10;
@@ -1491,96 +1458,52 @@ function irr(cfs){
   return (lo+hi)/2;
 }
 
+const num0 = v => isFinite(+v) ? +v : 0;
 function model(){
-  const sqft = Math.max(1, S.sqft);
-  const acqCosts = S.purchase * S.acqPct/100;
-  const fitTotal = S.fitOut * (1 + S.contPct/100);
-  const debtProp = S.purchase * S.ltvProp/100;
-  const debtFit  = fitTotal   * S.ltcFit/100;
+  const sqft = Math.max(1, num0(S.sqft) || 1);
+  const acqCosts  = S.purchase * S.acqPct/100;
+  const worksTotal = S.fitOut * (1 + S.contPct/100);
+  const debtProp  = S.purchase * S.ltvProp/100;
+  const debtWorks = worksTotal * S.ltcFit/100;
+  const totalDebt = debtProp + debtWorks;
 
-  // interest accruing during the build, before income starts
-  const buildYrs = S.buildMon/12;
-  const cpIntProp = debtProp * (S.rateProp/100) * buildYrs;
-  const cpIntFit  = debtFit * 0.5 * (S.rateFit/100) * buildYrs;  // avg 50% drawn
-  const cpInt = S.capInt ? (cpIntProp + cpIntFit) : 0;
-
-  const totalDebt = debtProp + debtFit;
-  const totalCost = S.purchase + acqCosts + fitTotal + cpInt;
-  const equity    = totalCost - totalDebt;
-
-  const baseRev = S.revMode === "psf" ? S.rentPsf * sqft : S.revTotal;
-  const g  = S.revGrowth/100;
+  const works = Math.max(0, Math.round(num0(S.buildMon)));          /* months on site */
+  const hold  = Math.max(works, Math.round(num0(S.holdMon)) || 1);  /* months, buy to sale */
   const rp = S.rateProp/100, rf = S.rateFit/100;
-  const hold = Math.max(1, Math.round(S.hold));
 
-  const pmtProp = S.io ? 0 : pmt(debtProp, rp, S.amortYrs);
-  const pmtFit  = S.io ? 0 : pmt(debtFit,  rf, S.amortYrs);
+  /* The building is borrowed against from day one. The works facility is drawn
+     down as the job runs — half of it, on average, across the build — and then
+     sits fully drawn until the sale. */
+  const intProp  = debtProp  * rp * (hold/12);
+  const intWorks = debtWorks * rf * ((works/2 + Math.max(0, hold - works)) / 12);
+  const interest = intProp + intWorks;
 
-  let balProp = debtProp, balFit = debtFit;
-  const years = [];
-  let cum = 0;
+  /* Rolled-up interest is repaid out of the sale instead of funded monthly. */
+  const rolled    = S.rollUp ? interest : 0;
+  const cashInt   = interest - rolled;
+  const totalCost = S.purchase + acqCosts + worksTotal + interest;
+  const equity    = S.purchase + acqCosts + worksTotal + cashInt - totalDebt;
+  const debtAtSale = totalDebt + rolled;
 
-  for(let y=1; y<=hold+1; y++){
-    const gross = baseRev * Math.pow(1+g, y-1);
-    const ramp  = rampFactor(y, S.leaseUp);
-    const eff   = gross * ramp * (1 - S.vacancy/100);
-    const opex  = S.opexMode === "pct"
-                ? eff * S.opexPct/100
-                : S.opexPsf * sqft * Math.pow(1+g, y-1);
-    const noi   = eff - opex;
+  const salePrice = S.exitMode === "price" ? num0(S.exitPrice) : num0(S.exitPsf) * sqft;
+  const saleCosts = salePrice * S.saleCost/100;
+  const netSale   = salePrice - saleCosts - debtAtSale;
+  const profit    = netSale - equity;
+  const roe       = equity > 0 ? profit/equity : 0;
+  const years     = hold/12;
+  /* Annualised is the compound rate that turns the cash in into the cash back,
+     which is the only honest way to compare an 11-month job with a 3-year one. */
+  const annual    = (equity > 0 && netSale > 0 && years > 0)
+                  ? Math.pow(netSale/equity, 1/years) - 1 : null;
 
-    const iProp = balProp * rp, iFit = balFit * rf;
-    let dsProp = S.io ? iProp : Math.min(pmtProp, balProp + iProp);
-    let dsFit  = S.io ? iFit  : Math.min(pmtFit,  balFit  + iFit);
-    const ds = dsProp + dsFit;
-    const cf = noi - ds;
-
-    if(!S.io){
-      balProp = Math.max(0, balProp + iProp - dsProp);
-      balFit  = Math.max(0, balFit  + iFit  - dsFit);
-    }
-
-    if(y <= hold){
-      cum += cf;
-      years.push({y, gross, ramp, eff, opex, noi, ds, cf, cum,
-                  coc: equity>0 ? cf/equity : 0,
-                  cumPct: equity>0 ? cum/equity : 0,
-                  dscr: ds>0 ? noi/ds : Infinity,
-                  balance: balProp + balFit});   // closing balance
-    } else {
-      years.forwardNOI = noi;   // NOI in the year after sale — drives exit value
-    }
-  }
-
-  const forwardNOI = years.forwardNOI;
-  const endBalance = years[years.length-1].balance;
-  /* Two ways to value the exit. A building held for its income is worth its
-     forward NOI capitalised; something you buy, do up and resell is worth what
-     it sells for, and a cap rate says nothing useful about it. Whichever you
-     set, the other is shown implied, so the number can be sanity-checked
-     against the way the rest of the market talks about it. */
-  const exitValue = S.exitMode === "price"
-    ? S.exitPrice
-    : (S.exitCap > 0 ? forwardNOI / (S.exitCap/100) : 0);
-  const impliedCap = exitValue > 0 ? forwardNOI / exitValue : null;
-  const netProceeds = exitValue * (1 - S.saleCost/100) - endBalance;
-
-  const cfs = [-equity].concat(years.map((r,i) => r.cf + (i === years.length-1 ? netProceeds : 0)));
-  const rate = irr(cfs);
-  const totalOut = years.reduce((s,r) => s+r.cf, 0) + netProceeds;
-  const mult = equity > 0 ? totalOut/equity : 0;
-  const avgCoc = years.reduce((s,r) => s+r.coc, 0)/years.length;
-
-  // stabilised year 1 (no lease-up, no growth) for yield on cost
-  const stabEff  = baseRev * (1 - S.vacancy/100);
-  const stabOpex = S.opexMode === "pct" ? stabEff*S.opexPct/100 : S.opexPsf*sqft;
-  const stabNOI  = stabEff - stabOpex;
-  const stabDS   = S.io ? (debtProp*rp + debtFit*rf) : (pmtProp + pmtFit);
-  const blended  = totalDebt > 0 ? (debtProp*rp + debtFit*rf)/totalDebt : 0;
-
-  return {sqft, acqCosts, fitTotal, debtProp, debtFit, totalDebt, cpInt, totalCost, equity,
-          years, forwardNOI, exitValue, impliedCap, netProceeds, endBalance, irr:rate, mult, avgCoc,
-          stabNOI, stabDS, blended, hold, totalOut, baseRev};
+  return {sqft, acqCosts, worksTotal, debtProp, debtWorks, totalDebt, debtAtSale,
+          interest, intProp, intWorks, rolled, cashInt, totalCost, equity,
+          works, hold, years, salePrice, saleCosts, netSale, profit, roe, annual,
+          purchasePsf: S.purchase/sqft, worksPsf: worksTotal/sqft,
+          allInPsf: totalCost/sqft, salePsf: salePrice/sqft,
+          upliftOnCost: totalCost > 0 ? salePrice/totalCost - 1 : 0,
+          ltc: totalCost > 0 ? totalDebt/totalCost : 0,
+          blended: totalDebt > 0 ? (debtProp*rp + debtWorks*rf)/totalDebt : 0};
 }
 
 /* ==========================================================================
@@ -1728,17 +1651,9 @@ function applyModes(){
     const n = document.querySelector(`.field[data-k="${k}"]`);
     if(n) n.style.display = on ? "" : "none";
   };
-  show("rentPsf",  S.revMode === "psf");
-  show("revTotal", S.revMode === "total");
-  show("opexPct",  S.opexMode === "pct");
-  show("opexPsf",  S.opexMode === "psf");
-  show("amortYrs", !S.io);
-  show("exitCap",   S.exitMode === "cap");
+  show("exitPsf",   S.exitMode === "psf");
   show("exitPrice", S.exitMode === "price");
-  segSet("revSeg","rev", S.revMode);
-  segSet("opexSeg","opex", S.opexMode);
-  segSet("ioSeg","io", String(S.io));
-  segSet("capSeg","cap", String(S.capInt));
+  segSet("capSeg","cap", String(S.rollUp));
   segSet("exitSeg","exit", S.exitMode);
   segSet("areaSeg","area", S.areaUnit);
   segSet("ccySeg","ccy", S.ccy);
@@ -1779,129 +1694,60 @@ function niceTicks(min, max, count){
   return out;
 }
 
-/* ---- chart 1: operating cash flow per year ---- */
+/* ---- chart 1: everything that goes out, against what comes back ---- */
 function drawCashChart(m){
   const svg = document.getElementById("cfChart");
   svg.innerHTML = "";
-  const W = svg.clientWidth || 780, H = 260;
+  const W = svg.clientWidth || 780, H = 210;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("height", H);
-  const pad = {t:22, r:14, b:48, l:64};
-  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+  const pad = {t:30, r:16, b:40, l:16};
+  const iw = W - pad.l - pad.r;
 
-  const data = m.years;
-  let lo = Math.min(0, ...data.map(r => r.cf));
-  let hi = Math.max(0, ...data.map(r => r.cf));
-  const ticks = niceTicks(lo, hi, 4);
-  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length-1]);
-  const Y = v => pad.t + ih - (v - lo)/((hi-lo)||1) * ih;
-  const band = iw / data.length;
-  const bw = Math.min(24, band * 0.55);
+  const parts = [
+    {l:"Purchase",   v:S.purchase,    c:"var(--s1)"},
+    {l:"Buying costs", v:m.acqCosts,  c:"var(--s1)", op:.72},
+    {l:"Works",      v:m.worksTotal,  c:"var(--s1)", op:.5},
+    {l:"Interest",   v:m.interest,    c:"var(--s1)", op:.3}
+  ].filter(p => p.v > 0);
 
-  ticks.forEach(t => {
-    el("line",{x1:pad.l,x2:W-pad.r,y1:Y(t),y2:Y(t),stroke:"var(--grid)","stroke-width":1},svg);
-    el("text",{x:pad.l-9,y:Y(t)+4,"text-anchor":"end",fill:"var(--muted)","font-size":11,
-               "font-variant-numeric":"tabular-nums"},svg).textContent = moneyC(t);
-  });
-  el("line",{x1:pad.l,x2:W-pad.r,y1:Y(0),y2:Y(0),stroke:"var(--axis)","stroke-width":1},svg);
+  const top = Math.max(m.totalCost, m.salePrice, 1);
+  const X = v => (v/top) * iw;
+  const barH = 34, yCost = pad.t + 6, ySale = pad.t + 70;
 
-  const peak = data.reduce((a,b) => b.cf > a.cf ? b : a);
-
-  data.forEach((r,i) => {
-    const cx = pad.l + band*i + band/2;
-    const y0 = Y(Math.max(0, r.cf)), y1 = Y(Math.min(0, r.cf));
-    const h = Math.max(1, y1 - y0);
-    el("rect",{x:cx-bw/2, y:y0, width:bw, height:h, rx:4,
-               fill: r.cf >= 0 ? "var(--s1)" : "var(--crit)"},svg);
-
-    // year + the cash-on-cash figure the model is really about
-    el("text",{x:cx, y:H-27, "text-anchor":"middle", fill:"var(--muted)","font-size":11},svg)
-      .textContent = "Y"+r.y;
-    el("text",{x:cx, y:H-11, "text-anchor":"middle", fill: r.coc>=0?"var(--ink-2)":"var(--crit)",
-               "font-size":11,"font-weight":600,"font-variant-numeric":"tabular-nums"},svg)
-      .textContent = pct(r.coc,1);
-
-    // label only the first and the best year, so the numbers stay readable
-    if(r === peak || i === 0){
-      el("text",{x:cx, y: r.cf>=0 ? y0-7 : y1+14, "text-anchor":"middle", fill:"var(--ink)",
-                 "font-size":11.5,"font-weight":620},svg).textContent = moneyC(r.cf);
+  el("text",{x:pad.l, y:pad.t - 10, fill:"var(--muted)","font-size":11},svg).textContent = "Out";
+  let x = pad.l;
+  parts.forEach(p => {
+    const w = Math.max(0, X(p.v) - 2);
+    el("rect",{x, y:yCost, width:w, height:barH, rx:4, fill:p.c, "fill-opacity":p.op || 1},svg);
+    if(w > 58){
+      el("text",{x:x+9, y:yCost+15, fill:"#fff","font-size":10.5,"font-weight":600},svg).textContent = p.l;
+      el("text",{x:x+9, y:yCost+28, fill:"#fff","font-size":10.5,"fill-opacity":.85},svg).textContent = moneyC(p.v);
     }
-
-    const hit = el("rect",{x:pad.l+band*i, y:pad.t, width:band, height:ih, fill:"transparent"},svg);
-    hit.style.cursor = "crosshair";
-    hit.addEventListener("mousemove", e => showTip(e,
-      `<b>Year ${r.y}</b>
-       <div>Revenue <em>${money(r.eff)}</em>${r.ramp<0.999?` (${Math.round(r.ramp*100)}% let)`:""}</div>
-       <div>Operating costs <em>${money(r.opex)}</em></div>
-       <div>NOI <em>${money(r.noi)}</em></div>
-       <div>Debt service <em>${money(r.ds)}</em></div>
-       <div>Cash flow <em>${money(r.cf)}</em></div>
-       <div>Cash-on-cash <em>${pct(r.coc)}</em></div>
-       <div>DSCR <em>${isFinite(r.dscr)?r.dscr.toFixed(2):"∞"}</em></div>`));
-    hit.addEventListener("mouseleave", hideTip);
+    x += X(p.v);
   });
+  el("text",{x:pad.l + X(m.totalCost) + 9, y:yCost + 21, fill:"var(--ink)","font-size":12,"font-weight":640},svg)
+    .textContent = `${moneyC(m.totalCost)} all in`;
 
-}
+  el("text",{x:pad.l, y:ySale - 10, fill:"var(--muted)","font-size":11},svg).textContent = "Back";
+  const netBack = Math.max(0, m.salePrice - m.saleCosts);
+  el("rect",{x:pad.l, y:ySale, width:Math.max(0,X(netBack)), height:barH, rx:4,
+             fill: m.profit >= 0 ? "var(--good)" : "var(--crit)", "fill-opacity":.9},svg);
+  el("text",{x:pad.l+9, y:ySale+15, fill:"#fff","font-size":10.5,"font-weight":600},svg).textContent = "Sale less selling costs";
+  el("text",{x:pad.l+9, y:ySale+28, fill:"#fff","font-size":10.5,"fill-opacity":.85},svg).textContent = moneyC(netBack);
+  el("text",{x:pad.l + X(netBack) + 9, y:ySale + 21, fill:"var(--ink)","font-size":12,"font-weight":640},svg)
+    .textContent = moneyC(m.salePrice) + " sale";
 
-/* ---- chart 2: cumulative cash vs equity ---- */
-function drawCumChart(m){
-  const svg = document.getElementById("cumChart");
-  svg.innerHTML = "";
-  const W = svg.clientWidth || 780, H = 220;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  svg.setAttribute("height", H);
-  const pad = {t:16, r:66, b:28, l:64};
-  const iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
-
-  const pts = [{y:0, v:0}].concat(m.years.map(r => ({y:r.y, v:r.cum})));
-  pts[pts.length-1] = {y:pts[pts.length-1].y, v:pts[pts.length-1].v, sale:true};
-  const withSale = pts[pts.length-1].v + m.netProceeds;
-
-  let hi = Math.max(m.equity, withSale, 0), lo = Math.min(0, ...pts.map(p=>p.v));
-  const ticks = niceTicks(lo, hi, 4);
-  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length-1]);
-  const X = y => pad.l + (y/(m.hold||1))*iw;
-  const Y = v => pad.t + ih - (v-lo)/((hi-lo)||1)*ih;
-
-  ticks.forEach(t => {
-    el("line",{x1:pad.l,x2:W-pad.r,y1:Y(t),y2:Y(t),stroke:"var(--grid)","stroke-width":1},svg);
-    el("text",{x:pad.l-9,y:Y(t)+4,"text-anchor":"end",fill:"var(--muted)","font-size":11},svg).textContent = moneyC(t);
-  });
-
-  // equity invested reference line
-  el("line",{x1:pad.l,x2:W-pad.r,y1:Y(m.equity),y2:Y(m.equity),stroke:"var(--axis)","stroke-width":1,
-             "stroke-dasharray":"1 0"},svg);
-  el("text",{x:W-pad.r+6,y:Y(m.equity)+4,fill:"var(--muted)","font-size":11},svg).textContent = "equity in";
-
-  const d = pts.map((p,i) => (i?"L":"M")+X(p.y)+" "+Y(p.v)).join(" ");
-  el("path",{d, fill:"none", stroke:"var(--s1)","stroke-width":2,"stroke-linejoin":"round","stroke-linecap":"round"},svg);
-
-  // exit jump
-  el("path",{d:`M${X(m.hold)} ${Y(pts[pts.length-1].v)} L${X(m.hold)} ${Y(withSale)}`,
-             stroke:"var(--s2)","stroke-width":2,"stroke-linecap":"round",fill:"none"},svg);
-  el("circle",{cx:X(m.hold),cy:Y(withSale),r:4.5,fill:"var(--s2)",stroke:"var(--surface)","stroke-width":2},svg);
-  el("text",{x:X(m.hold)+9,y:Y(withSale)+4,fill:"var(--ink)","font-size":11.5,"font-weight":620},svg)
-    .textContent = moneyC(withSale);
-
-  pts.forEach((p,i) => {
-    if(!i) return;
-    el("circle",{cx:X(p.y),cy:Y(p.v),r:3.5,fill:"var(--s1)",stroke:"var(--surface)","stroke-width":2},svg);
-  });
-  for(let y=0; y<=m.hold; y++){
-    if(m.hold > 12 && y % 2) continue;
-    el("text",{x:X(y),y:H-9,"text-anchor":"middle",fill:"var(--muted)","font-size":11},svg).textContent = y?("Y"+y):"0";
+  /* the gap between the two bars is the whole question */
+  const gx = pad.l + Math.min(X(m.totalCost), X(netBack));
+  const gw = Math.abs(X(netBack) - X(m.totalCost));
+  if(gw > 1){
+    el("rect",{x:gx, y:yCost, width:gw, height:ySale + barH - yCost, fill: m.profit >= 0 ? "var(--good)" : "var(--crit)",
+               "fill-opacity":.09},svg);
+    el("text",{x:gx + gw/2, y:H - 16, "text-anchor":"middle",
+               fill: m.profit >= 0 ? "var(--good-text)" : "var(--crit)", "font-size":12.5,"font-weight":640},svg)
+      .textContent = `${m.profit >= 0 ? "Profit " : "Loss "}${moneyC(Math.abs(m.profit))}`;
   }
-
-  // hover
-  m.years.forEach(r => {
-    const hit = el("rect",{x:X(r.y)-iw/(m.hold*2||1), y:pad.t, width:iw/(m.hold||1), height:ih, fill:"transparent"},svg);
-    hit.addEventListener("mousemove", e => showTip(e,
-      `<b>End of year ${r.y}</b>
-       <div>Cumulative cash back <em>${money(r.cum)}</em></div>
-       <div>That is <em>${pct(r.cumPct)}</em> of your equity</div>
-       <div>Loan balance <em>${money(r.balance)}</em></div>`));
-    hit.addEventListener("mouseleave", hideTip);
-  });
 }
 
 /* ---- chart 3: comps spread ---- */
@@ -2076,110 +1922,92 @@ function render(){
   // ---- hero ----
   document.getElementById("heroEquity").textContent = money(m.equity);
   document.getElementById("heroNote").textContent =
-    `${moneyC(m.totalCost)} total cost less ${moneyC(m.totalDebt)} of debt · ` +
-    `${pct(m.totalDebt/(m.totalCost||1),0)} loan to cost · ` +
-    `${perArea(m.equity)} of your own money`;
+    `${moneyC(m.totalCost)} all in less ${moneyC(m.totalDebt)} borrowed · ` +
+    `${pct(m.ltc,0)} loan to cost · ${perArea(m.equity)} of your own money`;
 
-  const irrEl = document.getElementById("kIrr");
-  irrEl.textContent = m.irr === null ? "n/a" : pct(m.irr,1);
-  irrEl.className = "v2 " + (m.irr === null ? "" : m.irr >= 0 ? "pos" : "neg");
-  const multEl = document.getElementById("kMult");
-  multEl.textContent = m.mult.toFixed(2)+"×";
-  multEl.className = "v2 " + (m.mult >= 1 ? "pos" : "neg");
-  const cocEl = document.getElementById("kCoc");
-  cocEl.textContent = pct(m.avgCoc,1);
-  cocEl.className = "v2 " + (m.avgCoc >= 0 ? "pos" : "neg");
+  const pEl = document.getElementById("kIrr");
+  pEl.textContent = money(m.profit);
+  pEl.className = "v2 " + (m.profit >= 0 ? "pos" : "neg");
+  const rEl = document.getElementById("kMult");
+  rEl.textContent = pct(m.roe,0);
+  rEl.className = "v2 " + (m.roe >= 0 ? "pos" : "neg");
+  const aEl = document.getElementById("kCoc");
+  aEl.textContent = m.annual === null ? "—" : pct(m.annual,0);
+  aEl.className = "v2 " + (m.annual !== null && m.annual >= 0 ? "pos" : "neg");
 
   // ---- tiles ----
   const psf = v => perArea(v);
   document.getElementById("kCost").textContent = moneyC(m.totalCost);
   document.getElementById("kCostPsf").textContent =
-    `${psf(m.totalCost)} all-in · ${psf(S.purchase)} bricks · ${psf(m.fitTotal)} fit-out`;
+    `${psf(m.totalCost)} all-in · ${psf(S.purchase)} bricks · ${psf(m.worksTotal)} works`;
   document.getElementById("kDebt").textContent = moneyC(m.totalDebt);
   document.getElementById("kLtc").textContent =
-    `${moneyC(m.debtProp)} @ ${nf(S.rateProp,2)}% + ${moneyC(m.debtFit)} @ ${nf(S.rateFit,2)}% · blended ${pct(m.blended,2)}`;
-  document.getElementById("kNoi").textContent = moneyC(m.stabNOI);
-  document.getElementById("kNoiPsf").textContent = psf(m.stabNOI)+" stabilised";
-  const yoc = m.stabNOI/(m.totalCost||1);
-  document.getElementById("kYoc").textContent = pct(yoc,2);
-  const spread = yoc - (S.exitMode === "price" ? (m.impliedCap || 0) : S.exitCap/100);
+    `${moneyC(m.debtProp)} @ ${nf(S.rateProp,2)}% + ${moneyC(m.debtWorks)} @ ${nf(S.rateFit,2)}% · blended ${pct(m.blended,2)}`;
+  document.getElementById("kNoi").textContent = moneyC(m.salePrice);
+  document.getElementById("kNoiPsf").textContent = psf(m.salePrice) + " on sale";
+  const upEl = document.getElementById("kYoc");
+  upEl.textContent = pct(m.upliftOnCost,1);
+  upEl.className = "v " + (m.upliftOnCost >= 0 ? "pos" : "neg");
   const spEl = document.getElementById("kSpread");
-  spEl.textContent = (spread>=0?"+":"") + Math.round(spread*10000) + " bps vs exit cap";
-  spEl.className = "d " + (spread >= 0 ? "pos" : "neg");
-  document.getElementById("kExit").textContent = moneyC(m.exitValue);
-  document.getElementById("kExitPsf").textContent = S.exitMode === "price"
-    ? `${psf(m.exitValue)} · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`
-    : `${psf(m.exitValue)} · profit on cost ${pct((m.exitValue-m.totalCost)/(m.totalCost||1),1)}`;
-  const d1 = m.years[0].dscr, ds = m.stabDS>0 ? m.stabNOI/m.stabDS : Infinity;
-  const dEl = document.getElementById("kDscr");
-  dEl.textContent = (isFinite(d1)?d1.toFixed(2):"∞") + " / " + (isFinite(ds)?ds.toFixed(2):"∞");
-  dEl.className = "v " + (isFinite(ds) && ds < 1.25 ? "neg" : "pos");
-  const bkIdx = m.years.findIndex(r => r.cum >= m.equity);
-  document.getElementById("kBreak").textContent = bkIdx >= 0
-    ? `cash back by year ${m.years[bkIdx].y}` : `cash back needs the sale`;
-
-  const dis = document.getElementById("costWarn");
-  if(dis){
-    const heavy = m.fitTotal > S.purchase;
-    dis.hidden = !heavy;
-    if(heavy) dis.innerHTML =
-      `<span class="mark">!</span><span><b>The fit-out is larger than the building.</b> ` +
-      `${money(m.fitTotal)} of works against a ${money(S.purchase)} purchase. That can be right for a ` +
-      `shell, but if you have just read a price in from a listing, check the fit-out budget and the ` +
-      `floor area are both this property's and not the previous one's.</span>`;
-  }
+  spEl.textContent = `${moneyC(m.salePrice - m.totalCost)} above cost`;
+  spEl.className = "d " + (m.salePrice >= m.totalCost ? "pos" : "neg");
+  const exEl = document.getElementById("kExit");
+  exEl.textContent = money(m.profit);
+  exEl.className = "v " + (m.profit >= 0 ? "pos" : "neg");
+  document.getElementById("kExitPsf").textContent =
+    `${pct(m.roe,0)} on ${moneyC(m.equity)} of cash over ${m.hold} months`;
+  document.getElementById("kDscr").textContent = moneyC(m.interest);
+  document.getElementById("kDscr").className = "v";
+  document.getElementById("kBreak").textContent = S.rollUp
+    ? "rolled up, repaid at sale" : `paid monthly · ${moneyC(m.interest/Math.max(1,m.hold))} a month`;
 
   document.getElementById("chartSub").textContent =
-    `${m.hold}-year hold · equity ${moneyC(m.equity)}`;
+    `${m.hold} months · ${m.works} on site`;
+  document.getElementById("tblSub").textContent =
+    m.profit >= 0 ? `yes — ${money(m.profit)}` : `no — down ${money(-m.profit)}`;
 
-  // ---- table ----
-  const tb = document.querySelector("#cfTable tbody");
-  const maxAbs = Math.max(...m.years.map(r => Math.abs(r.cf)), 1);
-  tb.innerHTML = m.years.map(r => `
-    <tr>
-      <td>Year ${r.y}${r.ramp < 0.999 && m.baseRev > 0 ? ` <span class="pill">${Math.round(r.ramp*100)}% let</span>` : ""}</td>
-      <td>${money(r.eff)}</td>
-      <td>${money(r.noi)}</td>
-      <td>${money(r.ds)}</td>
-      <td class="${r.cf>=0?"pos":"neg"}">${money(r.cf)}<span class="bar" style="width:${Math.abs(r.cf)/maxAbs*34}px;background:${r.cf>=0?"var(--s1)":"var(--crit)"}"></span></td>
-      <td class="${r.coc>=0?"pos":"neg"}">${pct(r.coc,1)}</td>
-      <td>${money(r.cum)}</td>
-      <td>${pct(r.cumPct,0)}</td>
-    </tr>`).join("") + `
-    <tr class="exit">
-      <td>Sale, end Y${m.hold}</td>
-      <td colspan="2">${S.exitMode === "price"
-        ? `${moneyC(m.exitValue)} sale price · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`
-        : `${moneyC(m.exitValue)} @ ${nf(S.exitCap,2)}% cap on ${moneyC(m.forwardNOI)}`}</td>
-      <td>−${moneyC(m.endBalance)} loan</td>
-      <td class="${m.netProceeds>=0?"pos":"neg"}">${money(m.netProceeds)}</td>
-      <td class="${m.netProceeds>=0?"pos":"neg"}">${pct(m.netProceeds/(m.equity||1),0)}</td>
-      <td>${money(m.totalOut)}</td>
-      <td>${pct(m.mult,0)}</td>
-    </tr>`;
+  // ---- the statement ----
+  const row = (l, v, cls, note) => `<tr class="${cls||""}">
+    <td>${l}${note ? `<span class="rn">${note}</span>` : ""}</td>
+    <td class="${v < 0 ? "neg" : ""}">${money(v)}</td>
+    <td>${v === 0 ? "" : perArea(Math.abs(v))}</td></tr>`;
+  document.querySelector("#cfTable tbody").innerHTML =
+    row("Purchase price", S.purchase, "", nf(S.sqft,0) + " sq ft") +
+    row("Buying costs", m.acqCosts, "", nf(S.acqPct,2) + "% of the price") +
+    row("Works", m.worksTotal, "", nf(S.contPct,1) + "% contingency included") +
+    row("Interest", m.interest, "", `${m.hold} months on ${moneyC(m.totalDebt)}`) +
+    row("Total cost", m.totalCost, "exit") +
+    row("Borrowed", -m.totalDebt, "", pct(m.ltc,0) + " of cost") +
+    row("Cash you put in", m.equity, "exit") +
+    `<tr><td colspan="3" class="gap"></td></tr>` +
+    row("Sale price", m.salePrice, "", perArea(m.salePrice) + " on sale") +
+    row("Selling costs", -m.saleCosts, "", nf(S.saleCost,2) + "%") +
+    row("Repay the loan", -m.debtAtSale, "", S.rollUp ? "including rolled-up interest" : "") +
+    row("Cash back", m.netSale, "exit") +
+    `<tr class="${m.profit >= 0 ? "result-row" : "result-row loss"}">
+       <td>${m.profit >= 0 ? "Profit" : "Loss"}<span class="rn">${pct(m.roe,0)} on your cash${m.annual === null ? "" : ` · ${pct(m.annual,0)} a year compounded`}</span></td>
+       <td class="${m.profit >= 0 ? "pos" : "neg"}">${money(m.profit)}</td>
+       <td>${perArea(Math.abs(m.profit))}</td></tr>`;
 
   drawCashChart(m);
-  drawCumChart(m);
   renderComps(m);
 
   // hints under labels
   const h = (k,v) => { const n = document.getElementById("hint-"+k); if(n) n.textContent = v; };
   h("purchase", perArea(S.purchase));
-  h("fitOut",   perArea(m.fitTotal)+" incl. contingency");
+  h("fitOut",   perArea(m.worksTotal)+" incl. contingency");
   h("ltvProp",  moneyC(m.debtProp)+" borrowed");
-  h("ltcFit",   moneyC(m.debtFit)+" borrowed");
+  h("ltcFit",   moneyC(m.debtWorks)+" borrowed");
   h("acqPct",   moneyC(m.acqCosts));
-  h("contPct",  moneyC(m.fitTotal - S.fitOut));
-  h("buildMon", S.capInt ? moneyC(m.cpInt)+" interest in cash" : "interest ignored");
-  h("rentPsf",  moneyC(m.baseRev)+" a year");
-  h("revTotal", perArea(m.baseRev, 2));
-  h("opexPct",  moneyC(m.stabNOI)+" NOI");
-  h("opexPsf",  moneyC(m.stabNOI)+" NOI");
-  h("exitCap",  moneyC(m.exitValue)+" gross");
-  h("exitPrice", `${perArea(m.exitValue)} · implied ${m.impliedCap === null ? "—" : pct(m.impliedCap,2)} cap`);
-  h("hold",     m.irr===null?"":pct(m.irr,1)+" IRR");
+  h("contPct",  moneyC(m.worksTotal - S.fitOut));
+  h("buildMon", moneyC(m.intWorks)+" of works interest");
+  h("holdMon",  m.annual === null ? "" : pct(m.annual,0)+" a year");
+  h("rateProp", moneyC(m.intProp)+" over the hold");
+  h("rateFit",  moneyC(m.intWorks)+" over the hold");
+  h("exitPsf",  moneyC(m.salePrice));
+  h("exitPrice", perArea(m.salePrice));
+  h("saleCost", moneyC(m.saleCosts));
   h("sqft",     "");
-  h("amortYrs", moneyC(m.stabDS)+" a year");
 
   save();
 }
@@ -2199,39 +2027,18 @@ function buildAffixes(){
 document.getElementById("ccySeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(b) setCcy(b.dataset.ccy);
 });
-document.getElementById("revSeg").addEventListener("click", e => {
-  const b = e.target.closest("button"); if(!b) return;
-  // carry the number across so the switch doesn't jolt the model
-  if(b.dataset.rev === "total" && S.revMode === "psf") S.revTotal = S.rentPsf * S.sqft;
-  if(b.dataset.rev === "psf" && S.revMode === "total") S.rentPsf = S.revTotal / Math.max(1,S.sqft);
-  S.revMode = b.dataset.rev; applyModes(); render();
-});
-document.getElementById("opexSeg").addEventListener("click", e => {
-  const b = e.target.closest("button"); if(!b) return;
-  S.opexMode = b.dataset.opex; applyModes(); render();
-});
-document.getElementById("ioSeg").addEventListener("click", e => {
-  const b = e.target.closest("button"); if(!b) return;
-  S.io = +b.dataset.io; applyModes(); render();
-});
-document.getElementById("areaSeg").addEventListener("click", e => {
-  const b = e.target.closest("button"); if(!b || b.dataset.area === S.areaUnit) return;
-  S.areaUnit = b.dataset.area;          /* stored area never moves — only its unit */
-  applyModes(); render();
-});
 document.getElementById("exitSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b || b.dataset.exit === S.exitMode) return;
-  /* switch without jolting the model: carry the exit value you already had */
+  /* switch without jolting the model: carry the sale price you already had */
   const m = model();
-  if(b.dataset.exit === "price") S.exitPrice = Math.round(m.exitValue);
-  else if(m.forwardNOI > 0 && S.exitPrice > 0)
-    S.exitCap = clamp(F.exitCap, +(m.forwardNOI / S.exitPrice * 100).toFixed(2));
+  if(b.dataset.exit === "price") S.exitPrice = clamp(F.exitPrice, Math.round(m.salePrice));
+  else S.exitPsf = clamp(F.exitPsf, Math.round(m.salePrice / Math.max(1, S.sqft)));
   S.exitMode = b.dataset.exit;
   applyModes(); render();
 });
 document.getElementById("capSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
-  S.capInt = +b.dataset.cap; applyModes(); render();
+  S.rollUp = +b.dataset.cap; applyModes(); render();
 });
 document.getElementById("propName").addEventListener("input", e => { S.name = e.target.value; save(); });
 
@@ -2280,12 +2087,10 @@ document.getElementById("copyBtn").addEventListener("click", async () => {
     S.link ? `Listing: ${S.link}` : null,
     `Purchase ${money(S.purchase)} (${money(S.purchase/S.sqft,0)}/sf) + fit-out ${money(m.fitTotal)} (${money(m.fitTotal/S.sqft,0)}/sf)`,
     `Total cost ${money(m.totalCost)} · debt ${money(m.totalDebt)} · CASH IN ${money(m.equity)}`,
-    `Stabilised NOI ${money(m.stabNOI)} · yield on cost ${pct(m.stabNOI/m.totalCost,2)}`,
-    `${m.hold}-yr hold · IRR ${m.irr===null?"n/a":pct(m.irr,1)} · ${m.mult.toFixed(2)}x · avg CoC ${pct(m.avgCoc,1)}`,
-    `Exit ${money(m.exitValue)} @ ${nf(S.exitCap,2)}% cap · net proceeds ${money(m.netProceeds)}`,
-    "",
-    "Year\tNOI\tDebt service\tCash flow\tCash-on-cash"
-  ].filter(Boolean).concat(m.years.map(r => `${r.y}\t${Math.round(r.noi)}\t${Math.round(r.ds)}\t${Math.round(r.cf)}\t${pct(r.coc,1)}`));
+    `Cash in ${money(m.equity)} · sale ${money(m.salePrice)} · ${m.hold} months`,
+    `PROFIT ${money(m.profit)} · ${pct(m.roe,0)} on cash${m.annual === null ? "" : ` · ${pct(m.annual,0)} a year`}`,
+    ""
+  ].filter(Boolean);
   try{
     await navigator.clipboard.writeText(lines.join("\n"));
     const b = document.getElementById("copyBtn"); const t = b.textContent;

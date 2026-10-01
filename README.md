@@ -33,20 +33,17 @@ Open `index.html` in any browser — there is no build step and no server.
 
 ## What it models
 
-- **Two debt tranches, priced separately.** Leverage on the purchase price and on the
-  fit-out are set independently, at their own interest rates, plus interest accruing
-  over the build period before income starts.
-- **Total cash in.** Purchase + acquisition costs + fit-out + contingency + build
-  interest, less all debt drawn.
-- **Return on that cash, every year of the hold** — as a cash figure and as
-  cash-on-cash %, alongside IRR, equity multiple, DSCR and yield on cost.
-- **Exit, valued either way.** A building held for its income is worth its forward
-  NOI capitalised at an exit cap rate. Something bought, done up and resold is worth
-  what it sells for, and a cap rate says nothing useful about it — so the exit takes
-  a sale price directly. Whichever you set, the other is shown implied. Sale costs
-  and the outstanding loan balance come off either.
-- **Price per sq ft** for the subject property against a spread of comparable sales,
-  filtered by size, distance and recency.
+A trade, not an income asset. Buy for X, spend X on it, sell for X, X months later —
+am I making or losing money?
+
+- **Money in.** Purchase, buying costs, works plus contingency, and the interest that
+  runs the whole time you hold it, paid monthly or rolled up into the loan.
+- **Two debt tranches, priced separately.** The building is borrowed against from day
+  one; the works facility is drawn down as the job runs and sits fully drawn until sale.
+- **Money back.** Sale price as a rate or a total, less selling costs, less the loan.
+- **The answer.** Profit, return on the cash you put in, and that return compounded to
+  a year so an eleven-month job and a three-year one can be compared.
+- **Price per sq ft** for the subject against comparable sales.
 
 ## Buildings or land
 
