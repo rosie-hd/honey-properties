@@ -312,6 +312,11 @@ details.imp summary:hover{color:var(--ink)}
 }
 .miscgrid .field{margin-bottom:0}
 .seg-wrap{flex-wrap:wrap;max-width:200px;justify-content:flex-end}
+.lvlsel{
+  width:100%;height:32px;background:var(--surface-2);border:1px solid transparent;border-radius:7px;
+  color:var(--ink);font-family:var(--body);font-size:13px;padding:0 8px;cursor:pointer;
+}
+.lvlsel:focus{outline:none;border-color:var(--honey)}
 .sdltline{
   background:var(--surface-2);border-radius:8px;padding:9px 11px;margin:2px 0 10px;
   font-size:12px;color:var(--ink-2);line-height:1.5;
@@ -736,10 +741,10 @@ table.mini tr:last-child td{border-bottom:none}
         <div class="note" id="planHeroNote">—</div>
       </div>
       <div class="side">
-        <div><div class="lab">Target</div><div class="v2" id="planTarget">—</div></div>
-        <div><div class="lab">Run rate hits target</div><div class="v2" id="planHit">—</div></div>
-        <div><div class="lab">Average a year</div><div class="v2" id="planAvg">—</div></div>
+        <div><div class="lab">Target per project</div><div class="v2" id="planTarget">—</div></div>
         <div><div class="lab">Profit per project</div><div class="v2" id="planPer">—</div></div>
+        <div><div class="lab">Equity that needs</div><div class="v2" id="planHit">—</div></div>
+        <div><div class="lab">Five-year total</div><div class="v2" id="planAvg">—</div></div>
       </div>
     </div>
     <div class="tiles">
@@ -762,7 +767,7 @@ table.mini tr:last-child td{border-bottom:none}
       <table id="planTable">
         <thead><tr>
           <th>Year</th><th>Dates</th><th>Projects started</th><th>Running at year end</th>
-          <th>Capital deployed</th><th>Profit realised</th><th>Cumulative</th><th>Run rate a year</th>
+          <th>Capital deployed</th><th>Profit realised</th><th>Cumulative</th><th>Each project makes</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -875,7 +880,12 @@ table.mini tr:last-child td{border-bottom:none}
       </section>
 
       <section class="blk">
-        <h2>Fit-out</h2>
+        <h2>Works</h2>
+        <div class="field" style="margin-bottom:13px">
+          <div class="field-head"><label for="fitLevelSel">Level of work needed</label>
+            <span class="hint" id="hint-fitLevel"></span></div>
+          <select id="fitLevelSel" class="lvlsel" aria-label="Level of work needed"></select>
+        </div>
         <div id="g-fit"></div>
       </section>
 
@@ -1033,6 +1043,7 @@ const DEFAULTS = {
   feeArrange:      1,    /* % of the loan */
   feeOther:     1500,
   fitOut:    0,
+  fitLevel: "none",
   contPct:   10,
   buildMon:  12,
   holdMon:   18,
@@ -1099,7 +1110,7 @@ let STORE = {projects:[], activeId:null, plan:null};
 const PLAN_DEFAULTS = {
   ccy:            "£",
   startDate:      "2026-10-01",
-  targetProfit:   1000000,
+  targetProfit:   1000000,   /* per project */
   startCapital:   2000000,
   equityPerProj:  1500000,
   projectMonths:  24,
@@ -1210,6 +1221,7 @@ function migrate(st){
   if(!isFinite(+st.exitPrice)) st.exitPrice = Math.round(+st.purchase || 0);
   if(!isFinite(+st.holdMon))  st.holdMon  = Math.max(1, Math.round((+st.hold || 1.5) * 12));
   if(!isFinite(+st.rollUp))   st.rollUp   = 0;
+  if(!st.fitLevel) st.fitLevel = (+st.fitOut > 0) ? "custom" : "none";
   if(!st.sdltType) st.sdltType = "resi";
   if(!st.sdltCase) st.sdltCase = "extra";
   if(!isFinite(+st.feeArrange)) st.feeArrange = 1;
@@ -1493,7 +1505,7 @@ const FIELDS = [
   {k:"startsPerYear", l:"New projects a year you can run", min:1, max:24,   st:1,     suf:" a year", dec:0, g:"g-plan", on:"plan"},
   {k:"returnPct",     l:"Return on each project", min:0,      max:300,      st:5,     suf:"%", dec:0, g:"g-plan2", on:"plan"},
   {k:"reinvestPct",   l:"Profit put back in",     min:0,      max:100,      st:5,     suf:"%", dec:0, g:"g-plan2", on:"plan"},
-  {k:"targetProfit",  l:"Annual profit target",   min:100000, max:20000000, st:50000, pre:"ccy", dec:0, g:"g-plan2", on:"plan"},
+  {k:"targetProfit",  l:"Profit target per project", min:50000, max:20000000, st:25000, pre:"ccy", dec:0, g:"g-plan2", on:"plan"},
 
   {k:"cSqftTol", l:"Size tolerance",        min:5,     max:100,    st:5,    pre:"±", suf:"%", dec:0, g:"g-comp"},
   {k:"cDist",    l:"Max distance",          min:0.25,  max:10,     st:0.25, suf:" miles", dec:2, g:"g-comp"},
@@ -1541,6 +1553,22 @@ function irr(cfs){
 }
 
 const num0 = v => isFinite(+v) ? +v : 0;
+
+/* What a refurbishment costs, per square foot. Standard spec runs £130–£190
+   nationally and London and the South East add 15–40%, so these are the London
+   end of each band — a starting figure to move, not a quote. */
+const FIT_LEVELS = [
+  {k:"none",     l:"— pick a level —",                              psf:null},
+  {k:"cosmetic", l:"Cosmetic — paint, floors, kitchen refresh",      psf:75},
+  {k:"standard", l:"Standard — full refurb, rewire, replumb",        psf:170},
+  {k:"gut",      l:"Full gut — new layout, services, structure",     psf:285},
+  {k:"custom",   l:"Custom — my own figure",                         psf:null}
+];
+const fitRate = k => (FIT_LEVELS.find(x => x.k === k) || {}).psf;
+function applyFitLevel(){
+  const r = fitRate(S.fitLevel);
+  if(r != null) S.fitOut = Math.round(r * Math.max(1, num0(S.sqft)));
+}
 
 /* Stamp duty is the whole reason buying costs are not a flat percentage: on
    residential it runs in bands to 12%, a second property adds 5% on the entire
@@ -1689,6 +1717,8 @@ function setVal(k, v, skipRender){          /* v arrives in the displayed unit *
   v = Math.round(v * Math.pow(10, L.dec+2)) / Math.pow(10, L.dec+2);
   bag(f)[fkey(f)] = toStore(f, v);
   if(k === "rangeLo" || k === "rangeHi") S.rangeSet = 1;   /* yours now, not seeded */
+  if(k === "fitOut" && f.on !== "deal") S.fitLevel = "custom";
+  if(k === "sqft" && f.on !== "deal") applyFitLevel();      /* a level follows the area */
   syncField(k);
   if(!skipRender) rerender();
 }
@@ -2168,6 +2198,8 @@ function renderComps(m){
    8. RENDER
    ========================================================================== */
 function render(){
+  const lvl = document.getElementById("fitLevelSel");
+  if(lvl) lvl.value = S.fitLevel || "none";
   ensureRange();
   const m = model();
   FIELDS.forEach(f => { if(f.on !== "plan") syncField(f.k); });
@@ -2238,7 +2270,11 @@ function render(){
     row("Repay the loan", -m.debtAtSale, "", S.rollUp ? "including rolled-up interest" : "") +
     row("Cash back", m.netSale, "exit") +
     `<tr class="${m.profit >= 0 ? "result-row" : "result-row loss"}">
-       <td>${m.profit >= 0 ? "Profit" : "Loss"}<span class="rn">${pct(m.roe,0)} on your cash${m.annual === null ? "" : ` · ${pct(m.annual,0)} a year compounded`}</span></td>
+       <td>${m.profit >= 0 ? "Profit" : "Loss"}<span class="rn">${pct(m.roe,0)} on your cash${m.annual === null ? "" : ` · ${pct(m.annual,0)} a year compounded`}${
+                 (() => { const t = num0(PLAN.targetProfit); if(!(t > 0)) return "";
+                   const d = m.profit - t;
+                   return d >= 0 ? ` · ${money(d)} over the ${moneyC(t)} target`
+                                 : ` · ${money(-d)} short of the ${moneyC(t)} target`; })()}</span></td>
        <td class="${m.profit >= 0 ? "pos" : "neg"}">${money(m.profit)}</td>
        <td>${perArea(Math.abs(m.profit))}</td></tr>`;
 
@@ -2250,6 +2286,8 @@ function render(){
   const h = (k,v) => { const n = document.getElementById("hint-"+k); if(n) n.textContent = v; };
   h("purchase", perArea(S.purchase));
   h("fitOut",   perArea(m.worksTotal)+" incl. contingency");
+  h("fitLevel", fitRate(S.fitLevel) != null ? `£${fitRate(S.fitLevel)}/sf × ${nf(S.sqft,0)} sq ft`
+              : S.fitLevel === "custom" ? "your own figure" : "");
   h("ltvProp",  moneyC(m.debtProp)+" borrowed");
   h("ltcFit",   moneyC(m.debtWorks)+" borrowed");
   h("feeArrange", moneyC(m.bc.arrange));
@@ -2307,6 +2345,14 @@ document.getElementById("exitSeg").addEventListener("click", e => {
   S.exitMode = b.dataset.exit;
   applyModes(); render();
 });
+(function(){
+  const sel = document.getElementById("fitLevelSel");
+  sel.innerHTML = FIT_LEVELS.map(l =>
+    `<option value="${l.k}">${l.l}${l.psf != null ? ` · about £${l.psf}/sf` : ""}</option>`).join("");
+  sel.addEventListener("change", () => {
+    S.fitLevel = sel.value; applyFitLevel(); save(); render();
+  });
+})();
 document.getElementById("sdltTypeSeg").addEventListener("click", e => {
   const b = e.target.closest("button"); if(!b) return;
   S.sdltType = b.dataset.st; applyModes(); render();
@@ -2947,13 +2993,15 @@ function planSim(){
     v.cum = years.slice(0,i+1).reduce((a,b) => a + b.profit, 0);
     v.avg = v.cum / (i+1);          /* profit lands in lumps; the run rate is the average */
   });
+  const perProject = eq * ret;
+  const equityNeeded = ret > 0 ? PLAN.targetProfit / ret : Infinity;
   const hit    = years.findIndex(v => v.profit >= PLAN.targetProfit);
   const hitAvg = years.findIndex(v => v.avg    >= PLAN.targetProfit);
   return {years, perMonth, drawn,
           hitYear:    hit    < 0 ? null : hit + 1,
           hitAvgYear: hitAvg < 0 ? null : hitAvg + 1,
-          avg5: years[4].cum / 5,
-          perProject: eq * (PLAN.returnPct/100),
+          avg5: years[4].cum / 5, perProject, equityNeeded,
+          clears: perProject >= PLAN.targetProfit,
           stalled: PLAN.startCapital < eq};
 }
 
@@ -3095,27 +3143,29 @@ function renderHome(){
   document.querySelectorAll("#planCcySeg button").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.pccy === PLAN.ccy)));
 
-  document.getElementById("planTarget").textContent = moneyC(PLAN.targetProfit) + " a year";
+  document.getElementById("planTarget").textContent = moneyC(PLAN.targetProfit);
 
   const hitEl = document.getElementById("planHit");
-  if(sim.stalled){ hitEl.textContent = "never"; hitEl.className = "v2 neg"; }
-  else if(sim.hitAvgYear){ hitEl.textContent = "Year " + sim.hitAvgYear; hitEl.className = "v2 pos"; }
-  else { hitEl.textContent = "not in 5 yrs"; hitEl.className = "v2 neg"; }
+  hitEl.textContent = isFinite(sim.equityNeeded) ? moneyC(sim.equityNeeded) : "—";
+  hitEl.className = "v2";
   const avgEl = document.getElementById("planAvg");
-  avgEl.textContent = moneyC(sim.avg5);
-  avgEl.className = "v2 " + (sim.avg5 >= PLAN.targetProfit ? "pos" : "neg");
-  document.getElementById("planPer").textContent = moneyC(sim.perProject);
+  avgEl.textContent = moneyC(sim.years[4].cum);
+  avgEl.className = "v2";
+  const perEl = document.getElementById("planPer");
+  perEl.textContent = moneyC(sim.perProject);
+  perEl.className = "v2 " + (sim.clears ? "pos" : "neg");
 
   /* the headline is whichever is true: running yet, or counting down to it */
   const months = monthsSinceStart();
-  const best = Math.max(0, ...sim.years.map(v => v.profit));
   if(months < 0){
     document.getElementById("heroLab").textContent = "The plan starts";
     document.getElementById("planHero").textContent = daysUntilStart() + " days";
     document.getElementById("planHeroNote").textContent =
-      `1 October 2026. On these assumptions the first project completes in month ${PLAN.projectMonths}, ` +
-      `and the run rate reaches ${moneyC(PLAN.targetProfit)} a year ` +
-      (sim.hitAvgYear ? `in year ${sim.hitAvgYear} — ${yearLabel(sim.hitAvgYear-1)}.` : "not within five years.");
+      `1 October 2026. At a ${PLAN.returnPct}% return, clearing ${moneyC(PLAN.targetProfit)} on a project means ` +
+      `putting ${moneyC(sim.equityNeeded)} of equity into it — ` +
+      (sim.clears
+        ? `the ${moneyC(PLAN.equityPerProj)} you are modelling does that.`
+        : `more than the ${moneyC(PLAN.equityPerProj)} you are modelling, which clears ${moneyC(sim.perProject)}.`);
   } else {
     document.getElementById("heroLab").textContent = "Net returned so far";
     document.getElementById("planHero").textContent = money(a.net);
@@ -3145,15 +3195,13 @@ function renderHome(){
     `${PLAN.projectMonths} months a project · ${PLAN.reinvestPct}% of profit reinvested`;
   document.getElementById("rampLead").textContent = sim.stalled
     ? ""
-    : sim.hitYear
-      ? `At ${moneyC(PLAN.equityPerProj)} of equity a project and a ${PLAN.returnPct}% return, one completed ` +
-        `project makes ${moneyC(sim.perProject)} — ${(sim.perProject/PLAN.targetProfit).toFixed(1)}× the annual target on its own. ` +
-        `So the question is cadence, not count. Starting with ${moneyC(PLAN.startCapital)} you can carry ` +
-        `${Math.floor(PLAN.startCapital/PLAN.equityPerProj)} at once, and because each takes ${PLAN.projectMonths} months, ` +
-        `profit lands in lumps rather than evenly — the run rate reaches ${moneyC(PLAN.targetProfit)} in year ${sim.hitAvgYear}. ` +
-        `Set the starting capital to your real figure; it drives all of this.`
-      : `On these assumptions profit never clears ${moneyC(PLAN.targetProfit)} in a single year within five years. ` +
-        `The levers are the capital you start with, how long a project takes, and how many you can run at once.`;
+    : true
+      ? `At ${moneyC(PLAN.equityPerProj)} of equity a project and a ${PLAN.returnPct}% return, each completed project ` +
+        `makes ${moneyC(sim.perProject)} — ${sim.clears ? "clearing" : "short of"} the ${moneyC(PLAN.targetProfit)} target. ` +
+        `Starting with ${moneyC(PLAN.startCapital)} you can carry ${Math.floor(PLAN.startCapital/PLAN.equityPerProj)} at once, ` +
+        `and over five years that comes to ${moneyC(sim.years[4].cum)} across ` +
+        `${sim.years.reduce((a,b)=>a+b.starts,0)} projects started.`
+      : ``;
 
   const stall = document.querySelector(".stall");
   if(stall) stall.remove();
@@ -3166,7 +3214,7 @@ function renderHome(){
   }
 
   document.querySelector("#planTable tbody").innerHTML = sim.years.map((v,i) => `
-    <tr${v.avg >= PLAN.targetProfit ? ' class="exit"' : ""}>
+    <tr${v.profit > 0 ? ' class="exit"' : ""}>
       <td>Year ${v.y}</td>
       <td style="font-family:var(--body);color:var(--muted)">${yearLabel(i)}</td>
       <td>${v.starts}</td>
@@ -3174,7 +3222,7 @@ function renderHome(){
       <td>${moneyC(v.deployed)}</td>
       <td class="${v.profit >= PLAN.targetProfit ? "pos" : ""}">${money(v.profit)}</td>
       <td>${money(v.cum)}</td>
-      <td class="${v.avg >= PLAN.targetProfit ? "pos" : "neg"}">${money(v.avg)}</td>
+      <td>${v.starts ? money(sim.perProject) : "—"}</td>
     </tr>`).join("");
 
   FIELDS.forEach(f => { if(f.on === "plan") syncField(f.k); });
