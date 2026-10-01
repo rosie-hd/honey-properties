@@ -2822,9 +2822,9 @@ document.getElementById("listingText").addEventListener("paste", e => {
    ========================================================================== */
 const MODE_PARAMS = {
   areaUnit: ["sqft","acre","ha"],
-  exitMode: ["cap","price"],
-  revMode:  ["psf","total"],
-  opexMode: ["pct","psf"]
+  exitMode: ["top","psf","price"],
+  sdltType: ["resi","comm"],
+  sdltCase: ["extra","only","company"]
 };
 function parseQueryParams(){
   const q = new URLSearchParams(location.search);
@@ -2853,7 +2853,9 @@ function parseQueryParams(){
     const v = q.get(k);
     if(v && MODE_PARAMS[k].includes(v)) seed[k] = v;
   });
-  ["io","capInt"].forEach(k => { if(q.has(k)) seed[k] = q.get(k) === "0" ? 0 : 1; });
+  ["rollUp","sdltNonRes"].forEach(k => { if(q.has(k)) seed[k] = q.get(k) === "0" ? 0 : 1; });
+  /* a range handed over in a link is a chosen one, not a seeded one */
+  if(q.has("rangeLo") || q.has("rangeHi")) seed.rangeSet = 1;
   const unit = seed.areaUnit || DEFAULTS.areaUnit;
 
   FIELDS.forEach(f => {
