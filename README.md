@@ -1,4 +1,4 @@
-# Honey Properties
+# Adorna London
 
 A single-file underwriting dashboard for buy-and-fit-out property deals, and the
 five-year plan they add up to.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Honey Properties</title>
+<title>Adorna London</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -11,7 +11,7 @@
 <style>
 :root{
   color-scheme: light;
-  /* honey paper: neutrals carry a warm amber bias, data stays cool */
+  /* warm paper: neutrals carry a warm amber bias, data stays cool */
   --plane:#faf7f0; --surface:#fffdf8; --surface-2:#f3efe4; --surface-3:#ebe5d6;
   --ink:#17140d; --ink-2:#57513f; --muted:#8d856f;
   --grid:#e6e0d0; --axis:#cbc3ae; --hair:rgba(23,20,13,0.11);
@@ -19,7 +19,7 @@
   --good:#0ca30c; --warn:#c8922a; --crit:#d03b3b;
   --good-text:#006300;
   --accent:#2a78d6;
-  --honey:#c8922a;
+  --accent:#c8922a;
   --shadow:0 1px 2px rgba(23,20,13,.05), 0 6px 22px rgba(23,20,13,.06);
   --display:"Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -35,7 +35,7 @@
     --good:#0ca30c; --warn:#e0a83a; --crit:#d03b3b;
     --good-text:#0ca30c;
     --accent:#3987e5;
-    --honey:#e0a83a;
+    --accent:#e0a83a;
     --shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 22px rgba(0,0,0,.35);
   }
 }
@@ -48,7 +48,7 @@
   --good:#0ca30c; --warn:#e0a83a; --crit:#d03b3b;
   --good-text:#0ca30c;
   --accent:#3987e5;
-  --honey:#e0a83a;
+  --accent:#e0a83a;
   --shadow:0 1px 2px rgba(0,0,0,.5), 0 6px 22px rgba(0,0,0,.35);
 }
 
@@ -70,8 +70,8 @@ header.top{
 }
 .brand{display:flex;align-items:baseline;gap:10px}
 .brand h1{font-family:var(--display);font-size:17px;font-weight:700;margin:0;letter-spacing:-.012em}
-.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--honey);display:inline-block;align-self:center;
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--honey) 22%,transparent)}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);display:inline-block;align-self:center;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 .brand small{color:var(--muted);font-size:12px}
 header.top .spacer{flex:1}
 .idblock{display:flex;flex-direction:column;gap:2px;min-width:290px;flex:1 1 290px;max-width:460px}
@@ -87,18 +87,18 @@ header.top .spacer{flex:1}
 #propLink::placeholder{color:var(--muted)}
 #propLink:focus{outline:none;color:var(--ink)}
 #propLinkOpen{
-  flex:none;font-size:11.5px;font-weight:600;color:var(--honey);text-decoration:none;
+  flex:none;font-size:11.5px;font-weight:600;color:var(--accent);text-decoration:none;
   white-space:nowrap;border-bottom:1px solid transparent;
 }
-#propLinkOpen:hover{border-bottom-color:var(--honey)}
+#propLinkOpen:hover{border-bottom-color:var(--accent)}
 #propLinkNote{flex:none;font-size:11px;color:var(--muted);white-space:nowrap}
 @media (max-width:700px){#propLinkNote{display:none}}
 .found ol.howto{margin:10px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .found ol.howto li{display:list-item;font-size:12.5px;color:var(--ink-2);line-height:1.55}
 .found ol.howto b{color:var(--ink);font-weight:600}
 .found p.miss{margin:0;line-height:1.6;max-width:62ch}
-#propName:focus{outline:none;border-bottom-color:var(--honey)}
-.btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
+#propName:focus{outline:none;border-bottom-color:var(--accent)}
+.btn:focus-visible,.seg button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{
   background:var(--surface);color:var(--ink-2);border:1px solid var(--hair);
   border-radius:7px;padding:6px 11px;font:inherit;font-size:12.5px;cursor:pointer;
@@ -139,7 +139,7 @@ header.top .spacer{flex:1}
   display:flex;align-items:center;gap:1px;background:var(--surface-2);
   border:1px solid transparent;border-radius:7px;padding:0 9px;height:32px;
 }
-.field-input:focus-within{border-color:var(--honey);background:var(--surface)}
+.field-input:focus-within{border-color:var(--accent);background:var(--surface)}
 .field-input .aff{color:var(--muted);font-size:13px;user-select:none}
 .field-input input.num{
   flex:1;min-width:0;background:transparent;border:none;color:var(--ink);
@@ -154,11 +154,11 @@ input[type=range]{
 input[type=range]::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:var(--grid)}
 input[type=range]::-moz-range-track{height:3px;border-radius:2px;background:var(--grid)}
 input[type=range]::-webkit-slider-thumb{
-  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--honey);
+  -webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--accent);
   margin-top:-5px;border:2px solid var(--surface);
 }
 input[type=range]::-moz-range-thumb{
-  width:13px;height:13px;border-radius:50%;background:var(--honey);border:2px solid var(--surface)
+  width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid var(--surface)
 }
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 13px}
@@ -227,11 +227,11 @@ td .bar{display:inline-block;height:3px;border-radius:2px;background:var(--s1);v
 /* ---------- comps ---------- */
 .banner{
   display:flex;gap:9px;align-items:flex-start;background:var(--surface-2);
-  border:1px solid var(--hair);border-left:3px solid var(--honey);
+  border:1px solid var(--hair);border-left:3px solid var(--accent);
   border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px;
 }
 .banner b{color:var(--ink);font-weight:600}
-.banner > b:first-child{color:var(--honey);font-size:15px;line-height:1.2}
+.banner > b:first-child{color:var(--accent);font-size:15px;line-height:1.2}
 .filters{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
 .filters .field{width:158px;margin-bottom:0}
 .comps-tbl input{
@@ -240,7 +240,7 @@ td .bar{display:inline-block;height:3px;border-radius:2px;background:var(--s1);v
 }
 .comps-tbl input.txt{text-align:left;font-family:var(--body)}
 .comps-tbl input:hover{border-color:var(--hair)}
-.comps-tbl input:focus{outline:none;border-color:var(--honey);background:var(--surface)}
+.comps-tbl input:focus{outline:none;border-color:var(--accent);background:var(--surface)}
 .comps-tbl td{padding:2px 6px}
 .comps-tbl tr.out{opacity:.38}
 .comps-tbl .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 5px;border-radius:5px}
@@ -316,13 +316,13 @@ details.imp summary:hover{color:var(--ink)}
   width:100%;height:32px;background:var(--surface-2);border:1px solid transparent;border-radius:7px;
   color:var(--ink);font-family:var(--body);font-size:13px;padding:0 8px;cursor:pointer;
 }
-.lvlsel:focus{outline:none;border-color:var(--honey)}
+.lvlsel:focus{outline:none;border-color:var(--accent)}
 .sdltline{
   background:var(--surface-2);border-radius:8px;padding:9px 11px;margin:2px 0 10px;
   font-size:12px;color:var(--ink-2);line-height:1.5;
 }
 .sdltline b{color:var(--ink);font-family:var(--display);font-size:15px;font-weight:600;display:block}
-.sdltline a{color:var(--honey)}
+.sdltline a{color:var(--accent)}
 .seg.tiny{padding:1px;border-radius:6px;margin-top:2px}
 .seg.tiny button{font-size:10.5px;padding:3px 7px;border-radius:5px}
 .dealwarn{
@@ -335,9 +335,9 @@ details.imp summary:hover{color:var(--ink)}
   border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
 .dealwarn b{color:var(--ink);font-weight:620}
 .dealwarn .mark{flex:none;font-weight:700;color:var(--crit)}
-.dealwarn.warn .mark{color:var(--honey)}
+.dealwarn.warn .mark{color:var(--accent)}
 .disclose{
-  background:none;border:none;padding:0;font:inherit;font-size:11.5px;color:var(--honey);
+  background:none;border:none;padding:0;font:inherit;font-size:11.5px;color:var(--accent);
   cursor:pointer;text-decoration:underline;text-underline-offset:2px;
 }
 @media (max-width:760px){
@@ -360,9 +360,9 @@ details.imp summary:hover{color:var(--ink)}
   background:var(--surface-2);border:1px solid transparent;border-radius:5px;color:var(--ink);
   font-family:var(--body);font-size:12px;padding:3px 5px;width:100%;
 }
-#portTable select:focus{outline:none;border-color:var(--honey)}
+#portTable select:focus{outline:none;border-color:var(--accent)}
 #portTable td{vertical-align:middle}
-.openlink{background:none;border:none;color:var(--honey);cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px}
+.openlink{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;padding:2px 6px}
 .openlink:hover{text-decoration:underline}
 .stall{
   background:color-mix(in srgb,var(--crit) 10%,var(--surface));
@@ -381,8 +381,8 @@ body.on-projects .model-only{display:none !important}
   background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:14px;
   cursor:pointer;display:flex;flex-direction:column;gap:11px;transition:border-color .12s,transform .12s;
 }
-.proj:hover,.proj:focus-visible{border-color:var(--honey);transform:translateY(-1px)}
-.proj:focus-visible{outline:2px solid var(--honey);outline-offset:2px}
+.proj:hover,.proj:focus-visible{border-color:var(--accent);transform:translateY(-1px)}
+.proj:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .proj > header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
 .proj h3{font-size:14px;font-weight:600;margin:0;line-height:1.35;overflow-wrap:anywhere}
 .proj-actions{display:flex;gap:2px;flex:none;opacity:0;transition:opacity .12s}
@@ -406,7 +406,7 @@ body.on-projects .model-only{display:none !important}
 
 .chip{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;border:1px solid var(--hair);white-space:nowrap}
 .chip.meas{color:var(--good-text);border-color:color-mix(in srgb,var(--good) 40%,transparent)}
-.chip.ind{color:var(--honey);border-color:color-mix(in srgb,var(--honey) 45%,transparent)}
+.chip.ind{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
 .chip.bad{color:var(--crit);border-color:color-mix(in srgb,var(--crit) 45%,transparent)}
 .chip.anch{color:var(--s1);border-color:color-mix(in srgb,var(--s1) 45%,transparent)}
 #mktTable td{vertical-align:middle}
@@ -416,18 +416,18 @@ body.on-projects .model-only{display:none !important}
 .rangebar svg{display:block;width:100%;height:22px;overflow:visible}
 .usebtn{background:none;border:1px solid var(--hair);color:var(--ink-2);font:inherit;font-size:11.5px;
   padding:3px 9px;border-radius:6px;cursor:pointer;white-space:nowrap}
-.usebtn:hover{border-color:var(--honey);color:var(--ink)}
+.usebtn:hover{border-color:var(--accent);color:var(--ink)}
 table.mini{width:100%;border-collapse:collapse;font-family:var(--body);font-size:12.5px}
 table.mini td{padding:6px 0;border-bottom:1px solid var(--grid);text-align:left;white-space:normal}
 table.mini td:last-child{text-align:right;font-family:var(--mono);white-space:nowrap}
 table.mini tr:last-child td{border-bottom:none}
 .srcs{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px}
 .srcs li{font-size:12.5px;color:var(--ink-2);line-height:1.5}
-.srcs a{color:var(--honey)}
+.srcs a{color:var(--accent)}
 .loaded-bar{
   display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;
-  background:color-mix(in srgb,var(--honey) 13%,var(--surface));
-  border:1px solid color-mix(in srgb,var(--honey) 40%,transparent);
+  background:color-mix(in srgb,var(--accent) 13%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);
   border-radius:10px;padding:9px 13px;font-size:12.5px;color:var(--ink-2);
 }
 .loaded-bar b{color:var(--ink);font-weight:600}
@@ -442,22 +442,22 @@ table.mini tr:last-child td{border-bottom:none}
   border:1.5px dashed var(--axis);border-radius:9px;padding:12px 14px;cursor:pointer;
   display:flex;flex-direction:column;justify-content:center;gap:2px;transition:border-color .12s,background .12s;
 }
-.drop:hover,.drop:focus-visible{border-color:var(--honey);background:var(--surface-2)}
-.drop.over{border-color:var(--honey);background:color-mix(in srgb,var(--honey) 12%,var(--surface));border-style:solid}
+.drop:hover,.drop:focus-visible{border-color:var(--accent);background:var(--surface-2)}
+.drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface));border-style:solid}
 .drop b{font-size:13px;font-weight:600}
 .drop span{font-size:11.5px;color:var(--muted)}
-.drop u{text-decoration-color:var(--honey);text-underline-offset:2px}
+.drop u{text-decoration-color:var(--accent);text-underline-offset:2px}
 .ingest .or{display:flex;align-items:center;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .pastewrap{display:flex;flex-direction:column;gap:6px}
 .pastewrap textarea{
   flex:1;min-height:56px;resize:vertical;background:var(--surface-2);border:1px solid transparent;
   border-radius:9px;color:var(--ink);font-family:var(--body);font-size:12px;padding:9px 10px;
 }
-.pastewrap textarea:focus{outline:none;border-color:var(--honey);background:var(--surface)}
+.pastewrap textarea:focus{outline:none;border-color:var(--accent);background:var(--surface)}
 .pastewrap .btnrow{display:flex;gap:8px;align-items:center}
 .ingest-status{margin-top:12px;font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:9px}
 .ingest-status.err{color:var(--crit)}
-.spin{width:13px;height:13px;border:2px solid var(--grid);border-top-color:var(--honey);border-radius:50%;
+.spin{width:13px;height:13px;border:2px solid var(--grid);border-top-color:var(--accent);border-radius:50%;
   animation:sp .7s linear infinite;flex:none}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
@@ -474,10 +474,10 @@ table.mini tr:last-child td{border-bottom:none}
 .found .miss-v{color:var(--crit);font-weight:600;font-size:13px;font-family:var(--body)}
 .askbox{display:flex;align-items:center;gap:6px;white-space:nowrap}
 .askbox input{
-  width:96px;background:var(--surface-2);border:1px solid var(--honey);border-radius:7px;
+  width:96px;background:var(--surface-2);border:1px solid var(--accent);border-radius:7px;
   color:var(--ink);font-family:var(--mono);font-size:13px;padding:6px 8px;
 }
-.askbox input:focus{outline:2px solid var(--honey);outline-offset:1px}
+.askbox input:focus{outline:2px solid var(--accent);outline-offset:1px}
 .askbox > span{font-size:11.5px;color:var(--muted)}
 .found-foot{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
 .found-foot .note{font-size:11.5px;color:var(--muted)}
@@ -488,7 +488,7 @@ table.mini tr:last-child td{border-bottom:none}
 <div class="wrap">
 
 <header class="top">
-  <div class="brand"><span class="dot"></span><h1>Honey Properties</h1><small>return on equity model</small></div>
+  <div class="brand"><span class="dot"></span><h1>Adorna London</h1><small>return on equity model</small></div>
   <nav class="mainnav" id="mainnav">
     <button data-go="#/">Deal</button>
     <button data-go="#/properties">Properties</button>
@@ -1015,7 +1015,7 @@ table.mini tr:last-child td{border-bottom:none}
 </div><!-- /modelView -->
 
 <p class="foot">
-  Honey Properties · everything is an assumption, nothing here is advice.<br>
+  Adorna London · everything is an assumption, nothing here is advice.<br>
   Drag any figure sideways, scroll on it, or type over it. All inputs and comps save automatically to this browser.
 </p>
 </div>
@@ -1093,8 +1093,15 @@ function perArea(v, dec){
   return money(v * AU().perSqft / Math.max(1, S.sqft), dec == null ? 0 : dec) + "/" + AU().short;
 }
 
-const KEY = "honey-properties-v1";        /* the original single-deal store */
-const STORE_KEY = "honey-properties-v2";  /* { projects:[…], activeId } */
+const STORE_KEY = "adorna-london-v1";     /* { projects:[…], activeId } */
+const THEME_KEY = "adorna-london-theme";
+
+/* What this browser saved under the old name. Read once, so renaming the app
+   never costs anyone the numbers they had already entered — the next save
+   writes them back under the keys above. */
+const OLD_KEY = "honey-properties-v1";       /* the original single-deal store */
+const OLD_STORE_KEY = "honey-properties-v2"; /* the same shape as STORE_KEY */
+const OLD_THEME_KEY = "honey-properties-v1-theme";
 
 /* S and COMPS stay what they always were — the deal currently on screen. The
    store holds every deal; opening one loads it into S, and save() writes it
@@ -1246,7 +1253,7 @@ function blankProject(seed){
 
 function loadStore(){
   try{
-    const o = JSON.parse(localStorage.getItem(STORE_KEY) || "null");
+    const o = JSON.parse(localStorage.getItem(STORE_KEY) || localStorage.getItem(OLD_STORE_KEY) || "null");
     /* adopt the store even with no properties in it — the plan and the worked
        deal live here too, and dropping them because the shelf is empty loses
        settings that have nothing to do with the shelf */
@@ -1256,7 +1263,7 @@ function loadStore(){
     /* carry the single deal this browser already held into the new shelf,
        so upgrading never costs anyone the numbers they had entered */
     try{
-      const old = JSON.parse(localStorage.getItem(KEY) || "null");
+      const old = JSON.parse(localStorage.getItem(OLD_KEY) || "null");
       if(old && old.s){
         const p = blankProject(old.s);
         if(Array.isArray(old.comps)) p.comps = old.comps;
@@ -1517,7 +1524,7 @@ FIELDS.forEach(f => {
      lookup afterwards — setVal, syncField, the drag handlers — then resolves to
      the wrong one and writes to the wrong page's state. Use `src` to point a
      distinct key at a shared store field instead. */
-  if(F[f.k]) console.error("Honey Properties: duplicate field key", f.k);
+  if(F[f.k]) console.error("Adorna London: duplicate field key", f.k);
   F[f.k] = f;
 });
 /* purchase_d writes DEAL.purchase — the key on the property model is taken */
@@ -2402,7 +2409,7 @@ document.getElementById("themeBtn").addEventListener("click", () => {
   const sysDark = matchMedia("(prefers-color-scheme: dark)").matches;
   const next = cur ? (cur === "dark" ? "light" : "dark") : (sysDark ? "light" : "dark");
   document.documentElement.setAttribute("data-theme", next);
-  try{ localStorage.setItem(KEY+"-theme", next); }catch(e){}
+  try{ localStorage.setItem(THEME_KEY, next); }catch(e){}
   render();
 });
 document.getElementById("resetBtn").addEventListener("click", () => {
@@ -3565,7 +3572,7 @@ document.getElementById("newProjBtn").addEventListener("click", () => {
 addEventListener("hashchange", route);
 
 (function init(){
-  try{ const t = localStorage.getItem(KEY+"-theme"); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
+  try{ const t = localStorage.getItem(THEME_KEY) || localStorage.getItem(OLD_THEME_KEY); if(t) document.documentElement.setAttribute("data-theme", t); }catch(e){}
   loadStore();
   buildFields();
 
